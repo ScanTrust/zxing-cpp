@@ -116,6 +116,11 @@ if(NOT ANDROID)
     endif()
 endif()
 
+# tell XCode to remove non-simulator architectures when building for simulator (bug on XCode 12.1)
+if(PLATFORM STREQUAL "OS64COMBINED")
+    set_target_properties(${targets} PROPERTIES XCODE_ATTRIBUTE_EXCLUDED_ARCHS[sdk=iphonesimulator*] "armv7 i386 arm64")
+endif()
+
 install(TARGETS ${targets} EXPORT zxing-targets
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin

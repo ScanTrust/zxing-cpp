@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 continue=1
 
@@ -15,7 +15,7 @@ if [[ -z "$IOS_TOOLCHAIN" ]]; then
     continue=0
 fi
 
-if [[ $continue -ne 1 ]]; then
+if [[ ${continue} -ne 1 ]]; then
     echo "Configuration issue."
     exit 1
 fi
@@ -32,6 +32,17 @@ if [[ ${IOS_LIBS_OUTPUT} != /* ]]; then
     echo ${IOS_LIBS_OUTPUT}
 fi
 
-cmake .. -DCMAKE_TOOLCHAIN_FILE=${IOS_TOOLCHAIN} -DCMAKE_INSTALL_PREFIX=${IOS_LIBS_OUTPUT} -DCMAKE_PREFIX_PATH=${IOS_LIBS_OUTPUT} -DCMAKE_FIND_NO_INSTALL_PREFIX=True -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY --debug-output
-make
-make install
+export PLATFORM=OS64COMBINED
+
+#cmake .. -DPLATFORM=${PLATFORM} -DCMAKE_TOOLCHAIN_FILE=${IOS_TOOLCHAIN} -DCMAKE_INSTALL_PREFIX=${IOS_LIBS_OUTPUT} -DCMAKE_PREFIX_PATH=${IOS_LIBS_OUTPUT} -DCMAKE_FIND_NO_INSTALL_PREFIX=True -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY --debug-output
+#make
+#make install
+
+cmake .. -GXcode -DPLATFORM=${PLATFORM} -DCMAKE_TOOLCHAIN_FILE=${IOS_TOOLCHAIN} -DCMAKE_INSTALL_PREFIX=${IOS_LIBS_OUTPUT} -DCMAKE_PREFIX_PATH=${IOS_LIBS_OUTPUT} -DCMAKE_FIND_NO_INSTALL_PREFIX=True -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY --debug-output
+cmake --build . --target install
+#cmake '..' -GXcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_INSTALL_PREFIX=${IOS_LIBS_OUTPUT} -DCMAKE_PREFIX_PATH=${IOS_ZXING_LIBRARY} -DCMAKE_FIND_NO_INSTALL_PREFIX=True -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY --debug-output
+#cmake --build . --config Debug --target install
+
+#cmake -S. -B builds -GXcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_INSTALL_PREFIX=${IOS_LIBS_OUTPUT} -DCMAKE_PREFIX_PATH=${IOS_ZXING_LIBRARY} -DCMAKE_FIND_NO_INSTALL_PREFIX=True -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY --debug-output
+#cmake --build builds --config Debug --target install
+

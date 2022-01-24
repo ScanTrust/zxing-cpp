@@ -140,12 +140,11 @@ vector<vector<Ref<FinderPattern> > > MultiFinderPatternFinder::selectBestPattern
   
   int size = possibleCenters.size();
 
+    vector<vector<Ref<FinderPattern> > > results;
   if (size < 3) {
     // Couldn't find enough finder patterns
-    throw ReaderException("No code detected");
+    return results;
   }
-  
-  vector<vector<Ref<FinderPattern> > > results;
 
   /*
    * Begin HE modifications to safely detect multiple codes of equal size

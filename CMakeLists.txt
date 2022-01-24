@@ -7,6 +7,8 @@ option(BUILD_RUNNABLE "Enable generation of runnable targets" OFF)
 
 set(CMAKE_LIBRARY_PATH /opt/local/lib ${CMAKE_LIBRARY_PATH})
 
+set(CMAKE_CXX_STANDARD 14)
+
 # Check for polluted source tree.
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/CMakeCache.txt OR
     EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/CMakeFiles)
@@ -102,9 +104,11 @@ if(NOT ANDROID)
     endif()
 
     if(BUILD_TESTING)
+        message(STATUS "BUILD TESTING")
         # Add testrunner executable.
         find_package(CPPUNIT)
         if(CPPUNIT_FOUND)
+            message(STATUS "BUILD TESTING CPP UNIT ON")
             file(GLOB_RECURSE TESTRUNNER_FILES
                 "./core/tests/src/*.cpp"
                 "./core/tests/src/*.h"
@@ -152,3 +156,9 @@ install(
 
 configure_file(cmake/zxing-config.cmake.in zxing-config.cmake @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/zxing-config.cmake DESTINATION lib/zxing/cmake)
+
+#get_cmake_property(_variableNames VARIABLES)
+#list (SORT _variableNames)
+#foreach (_variableName ${_variableNames})
+#    message(STATUS "${_variableName}=${${_variableName}}")
+#endforeach()

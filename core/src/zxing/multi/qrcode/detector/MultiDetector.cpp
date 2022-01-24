@@ -27,20 +27,23 @@ MultiDetector::MultiDetector(Ref<BitMatrix> image) : Detector(image) {}
 MultiDetector::~MultiDetector(){}
 
 std::vector<Ref<DetectorResult> > MultiDetector::detectMulti(DecodeHints hints){
-  Ref<BitMatrix> image = getImage();
-  MultiFinderPatternFinder finder = MultiFinderPatternFinder(image, hints.getResultPointCallback());
-  std::vector<Ref<FinderPatternInfo> > info = finder.findMulti(hints);
-  std::vector<Ref<DetectorResult> > result;
-  for(unsigned int i = 0; i < info.size(); i++){
-    try{
-      result.push_back(processFinderPatternInfo(info[i]));
-    } catch (ReaderException const& e){
-      (void)e;
-      // ignore
+    Ref<BitMatrix> image = getImage();
+    MultiFinderPatternFinder finder = MultiFinderPatternFinder(image, hints.getResultPointCallback());
+    std::vector<Ref<FinderPatternInfo> > info = finder.findMulti(hints);
+    std::vector<Ref<DetectorResult> > result;
+    for(unsigned int i = 0; i < info.size(); i++){
+        try{
+            Ref<DetectorResult> res = processFinderPatternInfo(info[i]);
+            if (!res.empty()) {
+                result.push_back(res);
+            }
+        } catch (ReaderException const& e){
+          (void)e;
+          // ignore
+        }
     }
-  }
 
-  return result;
+    return result;
 }
 
 } // End zxing::multi namespace

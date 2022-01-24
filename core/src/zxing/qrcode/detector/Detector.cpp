@@ -71,13 +71,16 @@ Ref<DetectorResult> Detector::detect(DecodeHints const& hints) {
 }
 
 Ref<DetectorResult> Detector::processFinderPatternInfo(Ref<FinderPatternInfo> info){
+    if (info.empty()) {
+        return Ref<DetectorResult>();
+    }
   Ref<FinderPattern> topLeft(info->getTopLeft());
   Ref<FinderPattern> topRight(info->getTopRight());
   Ref<FinderPattern> bottomLeft(info->getBottomLeft());
 
   float moduleSize = calculateModuleSize(topLeft, topRight, bottomLeft);
   if (moduleSize < 1.0f) {
-    throw zxing::ReaderException("bad module size");
+    return Ref<DetectorResult>();
   }
   int dimension = computeDimension(topLeft, topRight, bottomLeft, moduleSize);
   Version *provisionalVersion = Version::getProvisionalVersionForDimension(dimension);

@@ -118,7 +118,7 @@ Ref<Result> MultiFormatReader::decodeInternal(Ref<BinaryBitmap> image) {
       // continue
     }
   }
-  throw ReaderException("No code detected");
+  return Ref<Result>();
 }
   
 MultiFormatReader::~MultiFormatReader() {}

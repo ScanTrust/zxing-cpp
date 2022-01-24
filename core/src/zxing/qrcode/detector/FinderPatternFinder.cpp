@@ -325,7 +325,7 @@ vector< Ref<FinderPattern> > FinderPatternFinder::selectBestPatterns() {
 
   if (startSize < 3) {
     // Couldn't find enough finder patterns
-    throw zxing::ReaderException("Could not find three finder patterns");
+    return vector<Ref<FinderPattern> >();
   }
 
   // Filter outlier possibilities whose module size is too different
@@ -544,6 +544,9 @@ Ref<FinderPatternInfo> FinderPatternFinder::find(DecodeHints const& hints) {
   }
 
   vector<Ref<FinderPattern> > patternInfo = selectBestPatterns();
+  if (patternInfo.empty()) {
+      return Ref<FinderPatternInfo>(nullptr);
+  }
   patternInfo = orderBestPatterns(patternInfo);
 
   Ref<FinderPatternInfo> result(new FinderPatternInfo(patternInfo));

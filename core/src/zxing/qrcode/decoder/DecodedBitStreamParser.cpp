@@ -52,25 +52,25 @@ const char DecodedBitStreamParser::ALPHANUMERIC_CHARS[] =
 
 namespace {int GB2312_SUBSET = 1;}
 
-void DecodedBitStreamParser::append(std::string &result,
+bool DecodedBitStreamParser::append(std::string &result,
                                     string const& in,
                                     const char *src) {
-  append(result, (char const*)in.c_str(), in.length(), src);
+  return append(result, (char const*)in.c_str(), in.length(), src);
 }
 
-void DecodedBitStreamParser::append(std::string &result,
+bool DecodedBitStreamParser::append(std::string &result,
                                     const char *bufIn,
                                     size_t nIn,
                                     const char *src) {
 #ifndef NO_ICONV
   if (nIn == 0) {
-    return;
+    return true;
   }
 
   iconv_t cd = iconv_open(StringUtils::UTF8, src);
   if (cd == (iconv_t)-1) {
     result.append((const char *)bufIn, nIn);
-    return;
+    return true;
   }
 
   const int maxOut = 4 * nIn + 1;
@@ -86,7 +86,8 @@ void DecodedBitStreamParser::append(std::string &result,
     if (oneway == (size_t)(-1)) {
       iconv_close(cd);
       delete[] bufOut;
-      throw ReaderException("error converting characters");
+      return false;
+//      throw ReaderException("error converting characters");
     }
   }
   iconv_close(cd);
@@ -98,15 +99,17 @@ void DecodedBitStreamParser::append(std::string &result,
 #else
   result.append((const char *)bufIn, nIn);
 #endif
+  return true;
 }
 
-void DecodedBitStreamParser::decodeHanziSegment(Ref<BitSource> bits_,
+bool DecodedBitStreamParser::decodeHanziSegment(Ref<BitSource> bits_,
                                                 string& result,
                                                 int count) {
   BitSource& bits (*bits_);
   // Don't crash trying to read more bits than we have available.
   if (count * 13 > bits.available()) {
-    throw FormatException();
+      return false;
+//    throw FormatException();
   }
 
   // Each character will require 2 bytes. Read the characters as 2-byte pairs
@@ -131,18 +134,24 @@ void DecodedBitStreamParser::decodeHanziSegment(Ref<BitSource> bits_,
     count--;
   }
 
-  try {
-    append(result, buffer, nBytes, StringUtils::GB2312);
-  } catch (ReaderException const& ignored) {
-    (void)ignored;
-    delete [] buffer;
-    throw FormatException();
+  if (!append(result, buffer, nBytes, StringUtils::GB2312)) {
+      delete [] buffer;
+      return false;
   }
 
+//  try {
+//    append(result, buffer, nBytes, StringUtils::GB2312);
+//  } catch (ReaderException const& ignored) {
+//    (void)ignored;
+//    delete [] buffer;
+//    throw FormatException();
+//  }
+
   delete [] buffer;
+  return true;
 }
 
-void DecodedBitStreamParser::decodeKanjiSegment(Ref<BitSource> bits, std::string &result, int count) {
+bool DecodedBitStreamParser::decodeKanjiSegment(Ref<BitSource> bits, std::string &result, int count) {
   // Each character will require 2 bytes. Read the characters as 2-byte pairs
   // and decode as Shift_JIS afterwards
   size_t nBytes = 2 * count;
@@ -165,17 +174,22 @@ void DecodedBitStreamParser::decodeKanjiSegment(Ref<BitSource> bits, std::string
     offset += 2;
     count--;
   }
-  try {
-    append(result, buffer, nBytes, StringUtils::SHIFT_JIS);
-  } catch (ReaderException const& ignored) {
-    (void)ignored;
-    delete [] buffer;
-    throw FormatException();
+  if (!append(result, buffer, nBytes, StringUtils::SHIFT_JIS)) {
+      delete[] buffer;
+      return false;
   }
+//  try {
+//    append(result, buffer, nBytes, StringUtils::SHIFT_JIS);
+//  } catch (ReaderException const& ignored) {
+//    (void)ignored;
+//    delete [] buffer;
+//    throw FormatException();
+//  }
   delete[] buffer;
+  return true;
 }
 
-void DecodedBitStreamParser::decodeByteSegment(Ref<BitSource> bits_,
+bool DecodedBitStreamParser::decodeByteSegment(Ref<BitSource> bits_,
                                                string& result,
                                                int count,
                                                CharacterSetECI* currentCharacterSetECI,
@@ -185,7 +199,8 @@ void DecodedBitStreamParser::decodeByteSegment(Ref<BitSource> bits_,
   BitSource& bits (*bits_);
   // Don't crash trying to read more bits than we have available.
   if (count << 3 > bits.available()) {
-    throw FormatException();
+      return false;
+//    throw FormatException();
   }
 
   ArrayRef<char> bytes_ (count);
@@ -204,16 +219,22 @@ void DecodedBitStreamParser::decodeByteSegment(Ref<BitSource> bits_,
   } else {
     encoding = currentCharacterSetECI->name();
   }
-  try {
-    append(result, readBytes, nBytes, encoding.c_str());
-  } catch (ReaderException const& ignored) {
-    (void)ignored;
-    throw FormatException();
+
+  if (!append(result, readBytes, nBytes, encoding.c_str())) {
+      return false;
   }
+
+//  try {
+//    append(result, readBytes, nBytes, encoding.c_str());
+//  } catch (ReaderException const& ignored) {
+//    (void)ignored;
+//    throw FormatException();
+//  }
   byteSegments->values().push_back(bytes_);
+  return true;
 }
 
-void DecodedBitStreamParser::decodeNumericSegment(Ref<BitSource> bits, std::string &result, int count) {
+bool DecodedBitStreamParser::decodeNumericSegment(Ref<BitSource> bits, std::string &result, int count) {
   int nBytes = count;
   char* bytes = new char[nBytes];
   int i = 0;
@@ -222,14 +243,16 @@ void DecodedBitStreamParser::decodeNumericSegment(Ref<BitSource> bits, std::stri
     // Each 10 bits encodes three digits
     if (bits->available() < 10) {
       delete[] bytes;
-      throw ReaderException("format exception");
+      return false;
+//      throw ReaderException("format exception");
     }
     int threeDigitsBits = bits->readBits(10);
     if (threeDigitsBits >= 1000) {
-      ostringstream s;
-      s << "Illegal value for 3-digit unit: " << threeDigitsBits;
       delete[] bytes;
-      throw ReaderException(s.str().c_str());
+      return false;
+//      ostringstream s;
+//      s << "Illegal value for 3-digit unit: " << threeDigitsBits;
+//      throw ReaderException(s.str().c_str());
     }
     bytes[i++] = ALPHANUMERIC_CHARS[threeDigitsBits / 100];
     bytes[i++] = ALPHANUMERIC_CHARS[(threeDigitsBits / 10) % 10];
@@ -239,45 +262,52 @@ void DecodedBitStreamParser::decodeNumericSegment(Ref<BitSource> bits, std::stri
   if (count == 2) {
     if (bits->available() < 7) {
       delete[] bytes;
-      throw ReaderException("format exception");
+      return false;
+//      throw ReaderException("format exception");
     }
     // Two digits left over to read, encoded in 7 bits
     int twoDigitsBits = bits->readBits(7);
     if (twoDigitsBits >= 100) {
-      ostringstream s;
-      s << "Illegal value for 2-digit unit: " << twoDigitsBits;
       delete[] bytes;
-      throw ReaderException(s.str().c_str());
+      return false;
+//      ostringstream s;
+//      s << "Illegal value for 2-digit unit: " << twoDigitsBits;
+//      throw ReaderException(s.str().c_str());
     }
     bytes[i++] = ALPHANUMERIC_CHARS[twoDigitsBits / 10];
     bytes[i++] = ALPHANUMERIC_CHARS[twoDigitsBits % 10];
   } else if (count == 1) {
     if (bits->available() < 4) {
       delete[] bytes;
-      throw ReaderException("format exception");
+      return false;
+//      throw ReaderException("format exception");
     }
     // One digit left over to read
     int digitBits = bits->readBits(4);
     if (digitBits >= 10) {
-      ostringstream s;
-      s << "Illegal value for digit unit: " << digitBits;
       delete[] bytes;
-      throw ReaderException(s.str().c_str());
+      return false;
+//      ostringstream s;
+//      s << "Illegal value for digit unit: " << digitBits;
+//      throw ReaderException(s.str().c_str());
     }
     bytes[i++] = ALPHANUMERIC_CHARS[digitBits];
   }
   append(result, bytes, nBytes, StringUtils::ASCII);
   delete[] bytes;
+  return true;
 }
 
-char DecodedBitStreamParser::toAlphaNumericChar(size_t value) {
+bool DecodedBitStreamParser::toAlphaNumericChar(size_t value, char* out) {
   if (value >= sizeof(DecodedBitStreamParser::ALPHANUMERIC_CHARS)) {
-    throw FormatException();
+      return false;
+//    throw FormatException();
   }
-  return ALPHANUMERIC_CHARS[value];
+  *out = ALPHANUMERIC_CHARS[value];
+  return true;
 }
 
-void DecodedBitStreamParser::decodeAlphanumericSegment(Ref<BitSource> bits_,
+bool DecodedBitStreamParser::decodeAlphanumericSegment(Ref<BitSource> bits_,
                                                        string& result,
                                                        int count,
                                                        bool fc1InEffect) {
@@ -286,19 +316,36 @@ void DecodedBitStreamParser::decodeAlphanumericSegment(Ref<BitSource> bits_,
   // Read two characters at a time
   while (count > 1) {
     if (bits.available() < 11) {
-      throw FormatException();
+        return false;
+//      throw FormatException();
     }
     int nextTwoCharsBits = bits.readBits(11);
-    bytes << toAlphaNumericChar(nextTwoCharsBits / 45);
-    bytes << toAlphaNumericChar(nextTwoCharsBits % 45);
+    char byte;
+    if (!toAlphaNumericChar(nextTwoCharsBits / 45, &byte)) {
+        return false;
+    }
+
+    bytes << byte;
+
+    if (!toAlphaNumericChar(nextTwoCharsBits % 45, &byte)) {
+        return false;
+    }
+    bytes << byte;
+//    bytes << toAlphaNumericChar(nextTwoCharsBits / 45);
+//    bytes << toAlphaNumericChar(nextTwoCharsBits % 45);
     count -= 2;
   }
   if (count == 1) {
     // special case: one character left
     if (bits.available() < 6) {
-      throw FormatException();
+        return false;
+//      throw FormatException();
     }
-    bytes << toAlphaNumericChar(bits.readBits(6));
+    char byte;
+    if (!toAlphaNumericChar(bits.readBits(6), &byte)) {
+        return false;
+    }
+    bytes << byte;
   }
   // See section 6.4.8.1, 6.4.8.2
   string s = bytes.str();
@@ -321,26 +368,30 @@ void DecodedBitStreamParser::decodeAlphanumericSegment(Ref<BitSource> bits_,
     s = r.str();
   }
   append(result, s, StringUtils::ASCII);
+  return true;
 }
 
 namespace {
-  int parseECIValue(BitSource& bits) {
+  bool parseECIValue(BitSource& bits, int* out) {
     int firstByte = bits.readBits(8);
     if ((firstByte & 0x80) == 0) {
       // just one byte
-      return firstByte & 0x7F;
+      *out = firstByte & 0x7F;
+      return true;
     }
     if ((firstByte & 0xC0) == 0x80) {
       // two bytes
       int secondByte = bits.readBits(8);
-      return ((firstByte & 0x3F) << 8) | secondByte;
+      *out = ((firstByte & 0x3F) << 8) | secondByte;
+      return true;
     }
     if ((firstByte & 0xE0) == 0xC0) {
       // three bytes
       int secondThirdBytes = bits.readBits(16);
-      return ((firstByte & 0x1F) << 16) | secondThirdBytes;
+      *out = ((firstByte & 0x1F) << 16) | secondThirdBytes;
+      return true;
     }
-    throw FormatException();
+    return false;
   }
 }
 
@@ -354,7 +405,7 @@ DecodedBitStreamParser::decode(ArrayRef<char> bytes,
   string result;
   result.reserve(50);
   ArrayRef< ArrayRef<char> > byteSegments (0);
-  try {
+//  try {
     CharacterSetECI* currentCharacterSetECI = 0;
     bool fc1InEffect = false;
     Mode* mode = 0;
@@ -364,12 +415,9 @@ DecodedBitStreamParser::decode(ArrayRef<char> bytes,
         // OK, assume we're done. Really, a TERMINATOR mode should have been recorded here
         mode = &Mode::TERMINATOR;
       } else {
-        try {
-          mode = &Mode::forBits(bits.readBits(4)); // mode is encoded by 4 bits
-        } catch (IllegalArgumentException const& iae) {
-          throw iae;
-          // throw FormatException.getFormatInstance();
-        }
+          mode = &Mode::forBits(
+                  bits.readBits(4)  // throw IllegalArg
+                  ); // mode is encoded by 4 bits // throw ReaderException
       }
       if (mode != &Mode::TERMINATOR) {
         if ((mode == &Mode::FNC1_FIRST_POSITION) || (mode == &Mode::FNC1_SECOND_POSITION)) {
@@ -377,51 +425,67 @@ DecodedBitStreamParser::decode(ArrayRef<char> bytes,
           fc1InEffect = true;
         } else if (mode == &Mode::STRUCTURED_APPEND) {
           if (bits.available() < 16) {
-            throw FormatException();
+              return Ref<DecoderResult>();
+//            throw FormatException();
           }
           // not really supported; all we do is ignore it
           // Read next 8 bits (symbol sequence #) and 8 bits (parity data), then continue
-          bits.readBits(16);
+          bits.readBits(16); // throw IllegalArg
         } else if (mode == &Mode::ECI) {
           // Count doesn't apply to ECI
-          int value = parseECIValue(bits);
+          int value;
+          if (!parseECIValue(bits, &value)) {
+              return Ref<DecoderResult>();
+          }
           currentCharacterSetECI = CharacterSetECI::getCharacterSetECIByValue(value);
           if (currentCharacterSetECI == 0) {
-            throw FormatException();
+              return Ref<DecoderResult>();
+//            throw FormatException();
           }
         } else {
           // First handle Hanzi mode which does not start with character count
           if (mode == &Mode::HANZI) {
             //chinese mode contains a sub set indicator right after mode indicator
-            int subset = bits.readBits(4);
-            int countHanzi = bits.readBits(mode->getCharacterCountBits(version));
+            int subset = bits.readBits(4); // throw IllegalArg
+            int countHanzi = bits.readBits(mode->getCharacterCountBits(version)); // throw IllegalArg
             if (subset == GB2312_SUBSET) {
-              decodeHanziSegment(bits_, result, countHanzi);
+              if (!decodeHanziSegment(bits_, result, countHanzi)) {
+                  return Ref<DecoderResult>();
+              }
             }
           } else {
             // "Normal" QR code modes:
             // How many characters will follow, encoded in this mode?
-            int count = bits.readBits(mode->getCharacterCountBits(version));
+            int count = bits.readBits(mode->getCharacterCountBits(version)); // throw IllegalArg
             if (mode == &Mode::NUMERIC) {
-              decodeNumericSegment(bits_, result, count);
+              if (!decodeNumericSegment(bits_, result, count)) {
+                  return Ref<DecoderResult>();
+              }
             } else if (mode == &Mode::ALPHANUMERIC) {
-              decodeAlphanumericSegment(bits_, result, count, fc1InEffect);
+              if (!decodeAlphanumericSegment(bits_, result, count, fc1InEffect)) {
+                  return Ref<DecoderResult>();
+              }
             } else if (mode == &Mode::BYTE) {
-              decodeByteSegment(bits_, result, count, currentCharacterSetECI, byteSegments, hints);
+              if (!decodeByteSegment(bits_, result, count, currentCharacterSetECI, byteSegments, hints)) {
+                  return Ref<DecoderResult>();
+              }
             } else if (mode == &Mode::KANJI) {
-              decodeKanjiSegment(bits_, result, count);
+              if (!decodeKanjiSegment(bits_, result, count)) {
+                  return Ref<DecoderResult>();
+              }
             } else {
-              throw FormatException();
+                return Ref<DecoderResult>();
+//                throw FormatException();
             }
           }
         }
       }
     } while (mode != &Mode::TERMINATOR);
-  } catch (IllegalArgumentException const& iae) {
-    (void)iae;
-    // from readBits() calls
-    throw FormatException();
-  }
+//  } catch (IllegalArgumentException const& iae) {
+//    (void)iae;
+//    // from readBits() calls
+//    throw FormatException();
+//  }
   
   return Ref<DecoderResult>(new DecoderResult(bytes, Ref<String>(new String(result)), byteSegments, (string)ecLevel));
 }

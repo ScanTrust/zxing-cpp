@@ -32,14 +32,9 @@ std::vector<Ref<DetectorResult> > MultiDetector::detectMulti(DecodeHints hints){
     std::vector<Ref<FinderPatternInfo> > info = finder.findMulti(hints);
     std::vector<Ref<DetectorResult> > result;
     for(unsigned int i = 0; i < info.size(); i++){
-        try{
-            Ref<DetectorResult> res = processFinderPatternInfo(info[i]);
-            if (!res.empty()) {
-                result.push_back(res);
-            }
-        } catch (ReaderException const& e){
-          (void)e;
-          // ignore
+        Ref<DetectorResult> res = processFinderPatternInfo(info[i]);
+        if (!res.empty()) {
+            result.push_back(res);
         }
     }
 

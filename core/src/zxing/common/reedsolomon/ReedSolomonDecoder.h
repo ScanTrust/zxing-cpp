@@ -37,7 +37,7 @@ private:
 public:
   ReedSolomonDecoder(Ref<GenericGF> fld);
   ~ReedSolomonDecoder();
-  void decode(ArrayRef<int> received, int twoS);
+  bool decode(ArrayRef<int> received, int twoS);
   std::vector<Ref<GenericGFPoly> > runEuclideanAlgorithm(Ref<GenericGFPoly> a, Ref<GenericGFPoly> b, int R);
 
 private:

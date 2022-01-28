@@ -33,11 +33,17 @@ namespace zxing {
 		}
 		//TODO: see if any of the other files in the qrcode tree need tryHarder
 		Ref<Result> QRCodeReader::decode(Ref<BinaryBitmap> image, DecodeHints hints) {
-			Detector detector(image->getBlackMatrix());
+            auto blackMatrix = image->getBlackMatrix();
+            if (blackMatrix.empty()) {
+                return Ref<Result>();
+            }
+
+            Detector detector(blackMatrix);
 			Ref<DetectorResult> detectorResult(detector.detect(hints));
             if (detectorResult.empty()) {
                 return Ref<Result>();
             }
+
 			ArrayRef< Ref<ResultPoint> > points (detectorResult->getPoints());
 			Ref<DecoderResult> decoderResult(decoder_.decode(detectorResult->getBits()));
 			Ref<Result> result(new Result(decoderResult->getText(), decoderResult->getRawBytes(), points, BarcodeFormat::QR_CODE));
@@ -45,8 +51,17 @@ namespace zxing {
 		}
 		
 		Ref<ResultQR> QRCodeReader::decodeQR(Ref<BinaryBitmap> image, DecodeHints hints) {
-			Detector detector(image->getBlackMatrix());
+            auto blackMatrix = image->getBlackMatrix();
+            if (blackMatrix.empty()) {
+                return Ref<ResultQR>();
+            }
+
+            Detector detector(blackMatrix);
 			Ref<DetectorResult> detectorResult(detector.detect(hints));
+            if (detectorResult.empty()) {
+                return Ref<ResultQR>();
+            }
+
 			ArrayRef< Ref<ResultPoint> > points (detectorResult->getPoints());
 			Ref<DecoderResult> decoderResult(decoder_.decode(detectorResult->getBits()));
 			Ref<Result> result(new Result(decoderResult->getText(), decoderResult->getRawBytes(), points, BarcodeFormat::QR_CODE));

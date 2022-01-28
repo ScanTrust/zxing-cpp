@@ -114,7 +114,8 @@ ECBlocks* Version::getECBlocks() {
   
 Ref<Version> Version::getVersionForDimensions(int numRows, int numColumns) {
     if ((numRows & 0x01) != 0 || (numColumns & 0x01) != 0) {
-      throw ReaderException("Number of rows and columns must be even");
+        return Ref<Version>();
+//      throw ReaderException("Number of rows and columns must be even");
     }
     
     // TODO(bbrown): This is doing a linear search through the array of versions.
@@ -126,7 +127,8 @@ Ref<Version> Version::getVersionForDimensions(int numRows, int numColumns) {
         return version;
       }
     }
-    throw ReaderException("Error version not found");
+    return Ref<Version>();
+//    throw ReaderException("Error version not found");
   }
 
 /**

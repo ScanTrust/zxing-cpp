@@ -81,16 +81,14 @@ MultiFormatOneDReader::MultiFormatOneDReader(DecodeHints hints) : readers() {
 #include <typeinfo>
 
 Ref<Result> MultiFormatOneDReader::decodeRow(int rowNumber, Ref<BitArray> row) {
-  int size = readers.size();
-  for (int i = 0; i < size; i++) {
-    OneDReader* reader = readers[i];
-    try {
-      Ref<Result> result = reader->decodeRow(rowNumber, row);
-      return result;
-    } catch (ReaderException const& re) {
-      (void)re;
-      // continue
+    int size = readers.size();
+    for (int i = 0; i < size; i++) {
+        OneDReader* reader = readers[i];
+        Ref<Result> result = reader->decodeRow(rowNumber, row);
+        if (!result.empty()) {
+            return result;
+        }
+        // continue
     }
-  }
-  throw NotFoundException();
+    return Ref<Result>();
 }

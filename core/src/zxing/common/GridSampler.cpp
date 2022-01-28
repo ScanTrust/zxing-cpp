@@ -43,7 +43,9 @@ Ref<BitMatrix> GridSampler::sampleGrid(Ref<BitMatrix> image, int dimension, Ref<
       points[x + 1] = yValue;
     }
     transform->transformPoints(points);
-    checkAndNudgePoints(image, points);
+    if (!checkAndNudgePoints(image, points)) {
+        return Ref<BitMatrix>();
+    }
     for (int x = 0; x < max; x += 2) {
       if (image->get((int)points[x], (int)points[x + 1])) {
         bits->set(x >> 1, y);
@@ -64,7 +66,9 @@ Ref<BitMatrix> GridSampler::sampleGrid(Ref<BitMatrix> image, int dimensionX, int
       points[x + 1] = yValue;
     }
     transform->transformPoints(points);
-    checkAndNudgePoints(image, points);
+    if (!checkAndNudgePoints(image, points)) {
+        return Ref<BitMatrix>();
+    }
     for (int x = 0; x < max; x += 2) {
       if (image->get((int)points[x], (int)points[x + 1])) {
         bits->set(x >> 1, y);
@@ -84,7 +88,7 @@ Ref<BitMatrix> GridSampler::sampleGrid(Ref<BitMatrix> image, int dimension, floa
 
 }
 
-void GridSampler::checkAndNudgePoints(Ref<BitMatrix> image, vector<float> &points) {
+bool GridSampler::checkAndNudgePoints(Ref<BitMatrix> image, vector<float> &points) {
   int width = image->getWidth();
   int height = image->getHeight();
 
@@ -97,9 +101,10 @@ void GridSampler::checkAndNudgePoints(Ref<BitMatrix> image, vector<float> &point
     int x = (int)points[offset];
     int y = (int)points[offset + 1];
     if (x < -1 || x > width || y < -1 || y > height) {
-      ostringstream s;
-      s << "Transformed point out of bounds at " << x << "," << y;
-      throw ReaderException(s.str().c_str());
+        return false;
+//      ostringstream s;
+//      s << "Transformed point out of bounds at " << x << "," << y;
+//      throw ReaderException(s.str().c_str());
     }
 
     if (x == -1) {
@@ -113,7 +118,7 @@ void GridSampler::checkAndNudgePoints(Ref<BitMatrix> image, vector<float> &point
       points[offset + 1] = float(height - 1);
     }
   }
-
+  return true;
 }
 
 GridSampler &GridSampler::getInstance() {

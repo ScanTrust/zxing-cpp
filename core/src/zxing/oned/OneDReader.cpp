@@ -39,31 +39,30 @@ using zxing::DecodeHints;
 OneDReader::OneDReader() {}
 
 Ref<Result> OneDReader::decode(Ref<BinaryBitmap> image, DecodeHints hints) {
-  try {
-    return doDecode(image, hints);
-  } catch (NotFoundException const& nfe) {
-    // std::cerr << "trying harder" << std::endl;
-    bool tryHarder = hints.getTryHarder();
-    if (tryHarder && image->isRotateSupported()) {
-      // std::cerr << "v rotate" << std::endl;
-      Ref<BinaryBitmap> rotatedImage(image->rotateCounterClockwise());
-      // std::cerr << "^ rotate" << std::endl;
-      Ref<Result> result = doDecode(rotatedImage, hints);
-      // Doesn't have java metadata stuff
-      ArrayRef< Ref<ResultPoint> >& points (result->getResultPoints());
-      if (points && !points->empty()) {
-        int height = rotatedImage->getHeight();
-        for (int i = 0; i < points->size(); i++) {
-          points[i].reset(new OneDResultPoint(height - points[i]->getY() - 1, points[i]->getX()));
+    auto res =  doDecode(image, hints);
+    if (res.empty()) {
+        // std::cerr << "trying harder" << std::endl;
+        bool tryHarder = hints.getTryHarder();
+        if (tryHarder && image->isRotateSupported()) {
+            // std::cerr << "v rotate" << std::endl;
+            Ref<BinaryBitmap> rotatedImage(image->rotateCounterClockwise());
+            // std::cerr << "^ rotate" << std::endl;
+            Ref<Result> result = doDecode(rotatedImage, hints);
+            if (!result.empty()) {
+                // Doesn't have java metadata stuff
+                ArrayRef <Ref<ResultPoint>> &points(result->getResultPoints());
+                if (points && !points->empty()) {
+                    int height = rotatedImage->getHeight();
+                    for (int i = 0; i < points->size(); i++) {
+                        points[i].reset(new OneDResultPoint(height - points[i]->getY() - 1, points[i]->getX()));
+                    }
+                }
+                // std::cerr << "tried harder" << std::endl;
+                return result;
+            }
         }
-      }
-      // std::cerr << "tried harder" << std::endl;
-      return result;
-    } else {
-      // std::cerr << "tried harder nfe" << std::endl;
-      throw nfe;
     }
-  }
+    return res;
 }
 
 #include <typeinfo>
@@ -107,10 +106,8 @@ Ref<Result> OneDReader::doDecode(Ref<BinaryBitmap> image, DecodeHints hints) {
     }
 
     // Estimate black point for this row and load it:
-    try {
-      row = image->getBlackRow(rowNumber, row);
-    } catch (NotFoundException const& ignored) {
-      (void)ignored;
+    row = image->getBlackRow(rowNumber, row);
+    if (row.empty()) {
       continue;
     }
 
@@ -123,32 +120,32 @@ Ref<Result> OneDReader::doDecode(Ref<BinaryBitmap> image, DecodeHints hints) {
 
       // Java hints stuff missing
 
-      try {
         // Look for a barcode
         // std::cerr << "rn " << rowNumber << " " << typeid(*this).name() << std::endl;
         Ref<Result> result = decodeRow(rowNumber, row);
         // We found our barcode
-        if (attempt == 1) {
-          // But it was upside down, so note that
-          // result.putMetadata(ResultMetadataType.ORIENTATION, new Integer(180));
-          // And remember to flip the result points horizontally.
-          ArrayRef< Ref<ResultPoint> > points(result->getResultPoints());
-          if (points) {
-            points[0] = Ref<ResultPoint>(new OneDResultPoint(width - points[0]->getX() - 1,
-                                                             points[0]->getY()));
-            points[1] = Ref<ResultPoint>(new OneDResultPoint(width - points[1]->getX() - 1,
-                                                             points[1]->getY()));
-            
-          }
+        if (!result.empty()) {
+            if (attempt == 1) {
+                // But it was upside down, so note that
+                // result.putMetadata(ResultMetadataType.ORIENTATION, new Integer(180));
+                // And remember to flip the result points horizontally.
+                ArrayRef< Ref<ResultPoint> > points(result->getResultPoints());
+                if (points) {
+                    points[0] = Ref<ResultPoint>(new OneDResultPoint(width - points[0]->getX() - 1,
+                                                                     points[0]->getY()));
+                    points[1] = Ref<ResultPoint>(new OneDResultPoint(width - points[1]->getX() - 1,
+                                                                     points[1]->getY()));
+
+                }
+            }
+            return result;
+        } else {
+            continue;
         }
-        return result;
-      } catch (ReaderException const& re) {
-        (void)re;
-        continue;
-      }
+
     }
   }
-  throw NotFoundException();
+  return Ref<Result>();
 }
 
 float OneDReader::patternMatchVariance(vector<int>& counters,
@@ -189,7 +186,7 @@ float OneDReader::patternMatchVariance(vector<int>& counters,
   return totalVariance / total;
 }
 
-void OneDReader::recordPattern(Ref<BitArray> row,
+bool OneDReader::recordPattern(Ref<BitArray> row,
                                int start,
                                vector<int>& counters) {
   int numCounters = counters.size();
@@ -198,7 +195,7 @@ void OneDReader::recordPattern(Ref<BitArray> row,
   }
   int end = row->getSize();
   if (start >= end) {
-    throw NotFoundException();
+    return false;
   }
   bool isWhite = !row->get(start);
   int counterPosition = 0;
@@ -220,8 +217,9 @@ void OneDReader::recordPattern(Ref<BitArray> row,
   // If we read fully the last section of pixels and filled up our counters -- or filled
   // the last counter but ran off the side of the image, OK. Otherwise, a problem.
   if (!(counterPosition == numCounters || (counterPosition == numCounters - 1 && i == end))) {
-    throw NotFoundException();
+    return false;
   }
+  return true;
 }
 
 OneDReader::~OneDReader() {}

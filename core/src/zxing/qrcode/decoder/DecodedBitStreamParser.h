@@ -42,22 +42,22 @@ public:
 
 private:
   static char const ALPHANUMERIC_CHARS[];
-  static char toAlphaNumericChar(size_t value);
+  static bool toAlphaNumericChar(size_t value, char* out);
 
-  static void decodeHanziSegment(Ref<BitSource> bits, std::string &result, int count);
-  static void decodeKanjiSegment(Ref<BitSource> bits, std::string &result, int count);
-  static void decodeByteSegment(Ref<BitSource> bits, std::string &result, int count);
-  static void decodeByteSegment(Ref<BitSource> bits_,
+  static bool decodeHanziSegment(Ref<BitSource> bits, std::string &result, int count);
+  static bool decodeKanjiSegment(Ref<BitSource> bits, std::string &result, int count);
+  static bool decodeByteSegment(Ref<BitSource> bits, std::string &result, int count);
+  static bool decodeByteSegment(Ref<BitSource> bits_,
                                 std::string& result,
                                 int count,
                                 zxing::common::CharacterSetECI* currentCharacterSetECI,
                                 ArrayRef< ArrayRef<char> >& byteSegments,
                                 Hashtable const& hints);
-  static void decodeAlphanumericSegment(Ref<BitSource> bits, std::string &result, int count, bool fc1InEffect);
-  static void decodeNumericSegment(Ref<BitSource> bits, std::string &result, int count);
+  static bool decodeAlphanumericSegment(Ref<BitSource> bits, std::string &result, int count, bool fc1InEffect);
+  static bool decodeNumericSegment(Ref<BitSource> bits, std::string &result, int count);
 
-  static void append(std::string &ost, const char *bufIn, size_t nIn, const char *src);
-  static void append(std::string &ost, std::string const& in, const char *src);
+  static bool append(std::string &ost, const char *bufIn, size_t nIn, const char *src);
+  static bool append(std::string &ost, std::string const& in, const char *src);
 
 public:
   static Ref<DecoderResult> decode(ArrayRef<char> bytes,

@@ -42,6 +42,10 @@ Ref<Result> PDF417Reader::decode(Ref<BinaryBitmap> image, DecodeHints hints) {
   */
   Detector detector(image);
   Ref<DetectorResult> detectorResult = detector.detect(hints); /* 2012-09-17 hints ("try_harder") */
+  if (detectorResult.empty()) {
+      return Ref<Result>();
+  }
+
   ArrayRef< Ref<ResultPoint> > points(detectorResult->getPoints());
   
   if (!hints.isEmpty()) {
@@ -54,6 +58,9 @@ Ref<Result> PDF417Reader::decode(Ref<BinaryBitmap> image, DecodeHints hints) {
     }
   }
   decoderResult = decoder.decode(detectorResult->getBits(),hints);
+  if (detectorResult.empty()) {
+      return Ref<Result>();
+  }
   /*
     }
   */
@@ -75,16 +82,27 @@ Ref<BitMatrix> PDF417Reader::extractPureBits(Ref<BitMatrix> image) {
      } */
   
   int nModuleSize = moduleSize(leftTopBlack, image);
+  if (nModuleSize < 0) {
+      return Ref<BitMatrix>();
+  }
   
   int top = leftTopBlack[1];
   int bottom = rightBottomBlack[1];
   int left = findPatternStart(leftTopBlack[0], top, image);
+    if (left < 0) {
+        return Ref<BitMatrix>();
+    }
+
   int right = findPatternEnd(leftTopBlack[0], top, image);
+    if (right < 0) {
+        return Ref<BitMatrix>();
+    }
   
   int matrixWidth = (right - left + 1) / nModuleSize;
   int matrixHeight = (bottom - top + 1) / nModuleSize;
   if (matrixWidth <= 0 || matrixHeight <= 0) {
-    throw NotFoundException("PDF417Reader::extractPureBits: no matrix found!");
+      return Ref<BitMatrix>();
+//    throw NotFoundException("PDF417Reader::extractPureBits: no matrix found!");
   }
   
   // Push in the "border" by half the module width so that we start
@@ -115,12 +133,14 @@ int PDF417Reader::moduleSize(ArrayRef<int> leftTopBlack, Ref<BitMatrix> image) {
     x++;
   }
   if (x == width) {
-    throw NotFoundException("PDF417Reader::moduleSize: not found!");
+      return -1;
+//    throw NotFoundException("PDF417Reader::moduleSize: not found!");
   }
   
   int moduleSize = (int)(((unsigned)(x - leftTopBlack[0])) >> 3); // We've crossed left first bar, which is 8x
   if (moduleSize == 0) {
-    throw NotFoundException("PDF417Reader::moduleSize: is zero!");
+      return -1;
+//    throw NotFoundException("PDF417Reader::moduleSize: is zero!");
   }
   
   return moduleSize;
@@ -141,7 +161,8 @@ int PDF417Reader::findPatternStart(int x, int y, Ref<BitMatrix> image) {
     black = newBlack;
   }
   if (start == width - 1) {
-    throw NotFoundException("PDF417Reader::findPatternStart: no pattern start found!");
+      return -1;
+//    throw NotFoundException("PDF417Reader::findPatternStart: no pattern start found!");
   }
   return start;
 }
@@ -164,7 +185,8 @@ int PDF417Reader::findPatternEnd(int x, int y, Ref<BitMatrix> image) {
     black = newBlack;
   }
   if (end == x) {
-    throw NotFoundException("PDF417Reader::findPatternEnd: no pattern end found!");
+      return -1;
+//    throw NotFoundException("PDF417Reader::findPatternEnd: no pattern end found!");
   }
   return end;
 }

@@ -38,20 +38,30 @@ AztecReader::AztecReader() : decoder_() {
 }
         
 Ref<Result> AztecReader::decode(Ref<zxing::BinaryBitmap> image) {
-  Detector detector(image->getBlackMatrix());
-            
-  Ref<AztecDetectorResult> detectorResult(detector.detect());
-            
-  ArrayRef< Ref<ResultPoint> > points(detectorResult->getPoints());
-            
-  Ref<DecoderResult> decoderResult(decoder_.decode(detectorResult));
-            
-  Ref<Result> result(new Result(decoderResult->getText(),
+    auto blackMatrix = image->getBlackMatrix();
+    if (blackMatrix.empty()) {
+        return Ref<Result>();
+    }
+    Detector detector(blackMatrix);
+
+    Ref<AztecDetectorResult> detectorResult(detector.detect());
+    if (!detectorResult) {
+        return Ref<Result>();
+    }
+
+    ArrayRef< Ref<ResultPoint> > points(detectorResult->getPoints());
+
+    Ref<DecoderResult> decoderResult(decoder_.decode(detectorResult));
+    if (!decoderResult) {
+        return Ref<Result>();
+    }
+
+    Ref<Result> result(new Result(decoderResult->getText(),
                                 decoderResult->getRawBytes(),
                                 points,
                                 BarcodeFormat::AZTEC));
-            
-  return result;
+
+    return result;
 }
         
 Ref<Result> AztecReader::decode(Ref<BinaryBitmap> image, DecodeHints) {

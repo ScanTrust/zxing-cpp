@@ -35,8 +35,8 @@ private:
 			
   Range decodeStart(Ref<BitArray> row);
   Range decodeEnd(Ref<BitArray> row);
-  static void decodeMiddle(Ref<BitArray> row, int payloadStart, int payloadEnd, std::string& resultString);
-  void validateQuietZone(Ref<BitArray> row, int startPattern);
+  static bool decodeMiddle(Ref<BitArray> row, int payloadStart, int payloadEnd, std::string& resultString);
+  bool validateQuietZone(Ref<BitArray> row, int startPattern);
   static int skipWhiteSpace(Ref<BitArray> row);
 			
   static Range findGuardPattern(Ref<BitArray> row, int rowOffset, std::vector<int> const& pattern);

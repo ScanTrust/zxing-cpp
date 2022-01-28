@@ -90,8 +90,14 @@ Ref<Result> ITFReader::decodeRow(int rowNumber, Ref<BitArray> row) {
   Range startRange = decodeStart(row);
   Range endRange = decodeEnd(row);
 
+  if (!(startRange.isValid() && endRange.isValid())) {
+      return Ref<Result>();
+  }
+
   std::string result;
-  decodeMiddle(row, startRange[1], endRange[0], result);
+  if (!decodeMiddle(row, startRange[1], endRange[0], result)) {
+      return Ref<Result>();
+  }
   Ref<String> resultString(new String(result));
 
   ArrayRef<int> allowedLengths;
@@ -112,7 +118,8 @@ Ref<Result> ITFReader::decodeRow(int rowNumber, Ref<BitArray> row) {
   }
 
   if (!lengthOK) {
-    throw FormatException();
+      return Ref<Result>();
+    //throw FormatException();
   }
 
   ArrayRef< Ref<ResultPoint> > resultPoints(2);
@@ -129,7 +136,7 @@ Ref<Result> ITFReader::decodeRow(int rowNumber, Ref<BitArray> row) {
  * @param resultString {@link StringBuffer} to append decoded chars to
  * @throws ReaderException if decoding could not complete successfully
  */
-void ITFReader::decodeMiddle(Ref<BitArray> row,
+bool ITFReader::decodeMiddle(Ref<BitArray> row,
                              int payloadStart,
                              int payloadEnd,
                              std::string& resultString) {
@@ -145,7 +152,9 @@ void ITFReader::decodeMiddle(Ref<BitArray> row,
   while (payloadStart < payloadEnd) {
 
     // Get 10 runs of black/white.
-    recordPattern(row, payloadStart, counterDigitPair);
+    if(!recordPattern(row, payloadStart, counterDigitPair)) {
+        return false;
+    }
     // Split them into each array
     for (int k = 0; k < 5; k++) {
       int twoK = 2 * k;
@@ -154,14 +163,22 @@ void ITFReader::decodeMiddle(Ref<BitArray> row,
     }
 
     int bestMatch = decodeDigit(counterBlack);
+    if (bestMatch < 0) {
+        return false;
+    }
     resultString.append(1, (char) ('0' + bestMatch));
     bestMatch = decodeDigit(counterWhite);
+    if (bestMatch < 0) {
+        return false;
+    }
+
     resultString.append(1, (char) ('0' + bestMatch));
 
     for (int i = 0, e = counterDigitPair.size(); i < e; i++) {
       payloadStart += counterDigitPair[i];
     }
   }
+  return true;
 }
 
 /**
@@ -174,14 +191,23 @@ void ITFReader::decodeMiddle(Ref<BitArray> row,
  */
 ITFReader::Range ITFReader::decodeStart(Ref<BitArray> row) {
   int endStart = skipWhiteSpace(row);
+  if (endStart < 0) {
+      return {};
+  }
+
   Range startPattern = findGuardPattern(row, endStart, START_PATTERN);
+  if (!startPattern.isValid()) {
+      return {};
+  }
 
   // Determine the width of a narrow line in pixels. We can do this by
   // getting the width of the start pattern and dividing by 4 because its
   // made up of 4 narrow lines.
   narrowLineWidth = (startPattern[1] - startPattern[0]) / 4;
 
-  validateQuietZone(row, startPattern[0]);
+  if (!validateQuietZone(row, startPattern[0])) {
+      return {};
+  }
   return startPattern;
 }
 
@@ -200,12 +226,21 @@ ITFReader::Range ITFReader::decodeEnd(Ref<BitArray> row) {
   BitArray::Reverse r (row);
 
   int endStart = skipWhiteSpace(row);
+  if (endStart < 0) {
+      return {};
+  }
+
   Range endPattern = findGuardPattern(row, endStart, END_PATTERN_REVERSED);
+  if (!endPattern.isValid()) {
+      return {};
+  }
 
   // The start & end patterns must be pre/post fixed by a quiet zone. This
   // zone must be at least 10 times the width of a narrow line.
   // ref: http://www.barcode-1.net/i25code.html
-  validateQuietZone(row, endPattern[0]);
+  if (!validateQuietZone(row, endPattern[0])) {
+      return {};
+  }
 
   // Now recalculate the indices of where the 'endblock' starts & stops to
   // accommodate
@@ -232,7 +267,7 @@ ITFReader::Range ITFReader::decodeEnd(Ref<BitArray> row) {
  * @param startPattern index into row of the start or end pattern.
  * @throws ReaderException if the quiet zone cannot be found, a ReaderException is thrown.
  */
-void ITFReader::validateQuietZone(Ref<BitArray> row, int startPattern) {
+bool ITFReader::validateQuietZone(Ref<BitArray> row, int startPattern) {
   int quietCount = this->narrowLineWidth * 10;  // expect to find this many pixels of quiet zone
 
   for (int i = startPattern - 1; quietCount > 0 && i >= 0; i--) {
@@ -243,22 +278,24 @@ void ITFReader::validateQuietZone(Ref<BitArray> row, int startPattern) {
   }
   if (quietCount != 0) {
     // Unable to find the necessary number of quiet zone pixels.
-    throw NotFoundException();
+//    throw NotFoundException();
+    return false;
   }
+  return true;
 }
 
 /**
  * Skip all whitespace until we get to the first black line.
  *
  * @param row row of black/white values to search
- * @return index of the first black line.
+ * @return index of the first black line (-1 if error).
  * @throws ReaderException Throws exception if no black lines are found in the row
  */
 int ITFReader::skipWhiteSpace(Ref<BitArray> row) {
   int width = row->getSize();
   int endStart = row->getNextSet(0);
   if (endStart == width) {
-    throw NotFoundException();
+    return -1;
   }
   return endStart;
 }
@@ -306,7 +343,7 @@ ITFReader::Range ITFReader::findGuardPattern(Ref<BitArray> row,
       isWhite = !isWhite;
     }
   }
-  throw NotFoundException();
+  return {};
 }
 
 /**
@@ -333,7 +370,7 @@ int ITFReader::decodeDigit(vector<int>& counters){
   if (bestMatch >= 0) {
     return bestMatch;
   } else {
-    throw NotFoundException();
+    return -1;
   }
 }
 

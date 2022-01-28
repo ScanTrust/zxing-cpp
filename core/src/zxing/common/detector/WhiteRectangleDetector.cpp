@@ -46,8 +46,9 @@ WhiteRectangleDetector::WhiteRectangleDetector(Ref<BitMatrix> image) : image_(im
   downInit_ = (height_ + INIT_SIZE) >> 1;
   
   if (upInit_ < 0 || leftInit_ < 0 || downInit_ >= height_ || rightInit_ >= width_) {
-    throw NotFoundException("Invalid dimensions WhiteRectangleDetector");
-}
+    //throw NotFoundException("Invalid dimensions WhiteRectangleDetector");
+    _valid = false;
+  }
 }
 
 WhiteRectangleDetector::WhiteRectangleDetector(Ref<BitMatrix> image, int initSize, int x, int y) : image_(image) {
@@ -61,7 +62,8 @@ WhiteRectangleDetector::WhiteRectangleDetector(Ref<BitMatrix> image, int initSiz
   downInit_ = y + halfsize;
   
   if (upInit_ < 0 || leftInit_ < 0 || downInit_ >= height_ || rightInit_ >= width_) {
-    throw NotFoundException("Invalid dimensions WhiteRectangleDetector");
+    //throw NotFoundException("Invalid dimensions WhiteRectangleDetector");
+    _valid = false;
   }
 }
 
@@ -80,6 +82,9 @@ WhiteRectangleDetector::WhiteRectangleDetector(Ref<BitMatrix> image, int initSiz
  * @throws NotFoundException if no Data Matrix Code can be found
 */
 std::vector<Ref<ResultPoint> > WhiteRectangleDetector::detect() {
+    if (!_valid) {
+        return {};
+    }
   int left = leftInit_;
   int right = rightInit_;
   int up = upInit_;
@@ -179,7 +184,8 @@ std::vector<Ref<ResultPoint> > WhiteRectangleDetector::detect() {
     }
 
     if (z == NULL) {
-      throw NotFoundException("z == NULL");
+      //throw NotFoundException("z == NULL");
+      return {};
     }
 
     Ref<ResultPoint> t(NULL);
@@ -192,7 +198,8 @@ std::vector<Ref<ResultPoint> > WhiteRectangleDetector::detect() {
     }
 
     if (t == NULL) {
-      throw NotFoundException("t == NULL");
+      //throw NotFoundException("t == NULL");
+      return {};
     }
 
     Ref<ResultPoint> x(NULL);
@@ -205,7 +212,8 @@ std::vector<Ref<ResultPoint> > WhiteRectangleDetector::detect() {
     }
 
     if (x == NULL) {
-      throw NotFoundException("x == NULL");
+      //throw NotFoundException("x == NULL");
+      return {};
     }
 
     Ref<ResultPoint> y(NULL);
@@ -218,13 +226,14 @@ std::vector<Ref<ResultPoint> > WhiteRectangleDetector::detect() {
     }
 
     if (y == NULL) {
-      throw NotFoundException("y == NULL");
+      return {};
+      //throw NotFoundException("y == NULL");
     }
 
     return centerEdges(y, z, x, t);
 
   } else {
-    throw NotFoundException("No black point found on border");
+    return {};
   }
 }
 

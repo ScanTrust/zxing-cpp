@@ -36,6 +36,8 @@ private:
   Ref<Version> parsedVersion_;
   Ref<BitMatrix> readBitMatrix_;
 
+  bool isValid_{true};
+
   int copyBit(size_t x, size_t y, int versionBits);
 
 public:
@@ -43,6 +45,8 @@ public:
   Ref<Version> readVersion(Ref<BitMatrix> bitMatrix);
   ArrayRef<char> readCodewords();
   bool readModule(int row, int column, int numRows, int numColumns);
+
+  bool isValid() const;
 
 private:
   int readUtah(int row, int column, int numRows, int numColumns);

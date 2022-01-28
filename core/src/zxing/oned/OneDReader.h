@@ -34,10 +34,11 @@ protected:
  
   struct Range {
   private:
-    int data[2];
+    int data[2] {0};
+    bool _valid {false};
   public:
     Range() {}
-    Range(int zero, int one) {
+    Range(int zero, int one): _valid(true) {
       data[0] = zero;
       data[1] = one;
     }
@@ -46,6 +47,10 @@ protected:
     }
     int const& operator [] (int index) const {
       return data[index];
+    }
+
+    bool isValid() const {
+        return _valid;
     }
   };
 
@@ -65,7 +70,7 @@ public:
   // a empty ref should be returned e.g. return Ref<Result>();
   virtual Ref<Result> decodeRow(int rowNumber, Ref<BitArray> row) = 0;
 
-  static void recordPattern(Ref<BitArray> row,
+  static bool recordPattern(Ref<BitArray> row,
                             int start,
                             std::vector<int>& counters);
   virtual ~OneDReader();

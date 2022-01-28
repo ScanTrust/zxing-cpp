@@ -105,6 +105,9 @@ Ref<Result> Code39Reader::decodeRow(int rowNumber, Ref<BitArray> row) {
   result.clear();
 
   vector<int> start (findAsteriskPattern(row, theCounters));
+  if (start.empty()) {
+      return Ref<Result>();
+  }
   // Read off white space
   int nextStart = row->getNextSet(start[1]);
   int end = row->getSize();
@@ -112,12 +115,16 @@ Ref<Result> Code39Reader::decodeRow(int rowNumber, Ref<BitArray> row) {
   char decodedChar;
   int lastStart;
   do {
-    recordPattern(row, nextStart, theCounters);
+    if(!recordPattern(row, nextStart, theCounters)) {
+        return Ref<Result>();
+    }
     int pattern = toNarrowWidePattern(theCounters);
     if (pattern < 0) {
-      throw NotFoundException();;
+      return Ref<Result>();
     }
-    decodedChar = patternToChar(pattern);
+    if (!patternToChar(pattern, &decodedChar)) {
+        return Ref<Result>();
+    }
     result.append(1, decodedChar);
     lastStart = nextStart;
     for (int i = 0, end=theCounters.size(); i < end; i++) {
@@ -137,7 +144,7 @@ Ref<Result> Code39Reader::decodeRow(int rowNumber, Ref<BitArray> row) {
   // If 50% of last pattern size, following last pattern, is not whitespace,
   // fail (but if it's whitespace to the very end of the image, that's OK)
   if (nextStart != end && (whiteSpaceAfterEnd * 2) < lastPatternSize) {
-    throw NotFoundException();
+      return Ref<Result>();
   }
 
   if (usingCheckDigit) {
@@ -147,19 +154,22 @@ Ref<Result> Code39Reader::decodeRow(int rowNumber, Ref<BitArray> row) {
       total += checkdigit_string.find_first_of(decodeRowResult[i], 0);
     }
     if (result[max] != CHECK_DIGIT_STRING[total % 43]) {
-      throw ChecksumException();
+        return Ref<Result>();
     }
     result.resize(max);
   }
   
   if (result.length() == 0) {
     // Almost false positive
-    throw NotFoundException();
+      return Ref<Result>();
   }
   
   Ref<String> resultString;
   if (extendedMode) {
     resultString = decodeExtended(result);
+    if (!resultString) {
+        return Ref<Result>();
+    }
   } else {
     resultString = Ref<String>(new String(result));
   }
@@ -215,7 +225,7 @@ vector<int> Code39Reader::findAsteriskPattern(Ref<BitArray> row, vector<int>& co
       isWhite = !isWhite;
     }
   }
-  throw NotFoundException();
+  return {};
 }
 
 // For efficiency, returns -1 on failure. Not throwing here saved as many as
@@ -265,13 +275,15 @@ int Code39Reader::toNarrowWidePattern(vector<int>& counters){
   return -1;
 }
 
-char Code39Reader::patternToChar(int pattern){
+bool Code39Reader::patternToChar(int pattern, char* out){
   for (int i = 0; i < CHARACTER_ENCODINGS_LEN; i++) {
     if (CHARACTER_ENCODINGS[i] == pattern) {
-      return ALPHABET_STRING[i];
+        *out = ALPHABET_STRING[i];
+        return true;
     }
   }
-  throw ReaderException("");
+//  throw ReaderException("");
+  return false;
 }
 
 Ref<String> Code39Reader::decodeExtended(std::string encoded){
@@ -288,7 +300,8 @@ Ref<String> Code39Reader::decodeExtended(std::string encoded){
         if (next >= 'A' && next <= 'Z') {
           decodedChar = (char) (next + 32);
         } else {
-          throw ReaderException("");
+            return Ref<String>();
+//          throw ReaderException("");
         }
         break;
       case '$':
@@ -296,7 +309,8 @@ Ref<String> Code39Reader::decodeExtended(std::string encoded){
         if (next >= 'A' && next <= 'Z') {
           decodedChar = (char) (next - 64);
         } else {
-          throw ReaderException("");
+            return Ref<String>();
+//          throw ReaderException("");
         }
         break;
       case '%':
@@ -306,7 +320,8 @@ Ref<String> Code39Reader::decodeExtended(std::string encoded){
         } else if (next >= 'F' && next <= 'W') {
           decodedChar = (char) (next - 11);
         } else {
-          throw ReaderException("");
+            return Ref<String>();
+//          throw ReaderException("");
         }
         break;
       case '/':
@@ -316,7 +331,8 @@ Ref<String> Code39Reader::decodeExtended(std::string encoded){
         } else if (next == 'Z') {
           decodedChar = ':';
         } else {
-          throw ReaderException("");
+            return Ref<String>();
+//          throw ReaderException("");
         }
         break;
       }

@@ -30,6 +30,11 @@ EAN8Reader::EAN8Reader() : decodeMiddleCounters(4, 0) {}
 int EAN8Reader::decodeMiddle(Ref<BitArray> row,
                              Range const& startRange,
                              std::string& result){
+
+    if (!startRange.isValid()) {
+        return -1;
+    }
+
   vector<int>& counters (decodeMiddleCounters);
   counters[0] = 0;
   counters[1] = 0;
@@ -41,20 +46,33 @@ int EAN8Reader::decodeMiddle(Ref<BitArray> row,
 
   for (int x = 0; x < 4 && rowOffset < end; x++) {
     int bestMatch = decodeDigit(row, counters, rowOffset, L_PATTERNS);
+    // check decodeDigit success
+    if (bestMatch < 0) {
+      return -1;
+    }
+
     result.append(1, (char) ('0' + bestMatch));
     for (int i = 0, end = counters.size(); i < end; i++) {
-      rowOffset += counters[i];
+        rowOffset += counters[i];
     }
   }
 
   Range middleRange =
     findGuardPattern(row, rowOffset, true, MIDDLE_PATTERN);
+
+    if (!middleRange.isValid()) {
+        return -1;
+    }
   rowOffset = middleRange[1];
   for (int x = 0; x < 4 && rowOffset < end; x++) {
     int bestMatch = decodeDigit(row, counters, rowOffset, L_PATTERNS);
+    // check decodeDigit success
+    if (bestMatch < 0) {
+      return -1;
+    }
     result.append(1, (char) ('0' + bestMatch));
     for (int i = 0, end = counters.size(); i < end; i++) {
-      rowOffset += counters[i];
+    rowOffset += counters[i];
     }
   }
   return rowOffset;

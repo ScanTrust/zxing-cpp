@@ -39,7 +39,7 @@ ReedSolomonDecoder::ReedSolomonDecoder(Ref<GenericGF> field_) : field(field_) {}
 ReedSolomonDecoder::~ReedSolomonDecoder() {
 }
 
-void ReedSolomonDecoder::decode(ArrayRef<int> received, int twoS) {
+bool ReedSolomonDecoder::decode(ArrayRef<int> received, int twoS) {
   Ref<GenericGFPoly> poly(new GenericGFPoly(*field, received));
   ArrayRef<int> syndromeCoefficients(twoS);
   bool noError = true;
@@ -51,22 +51,33 @@ void ReedSolomonDecoder::decode(ArrayRef<int> received, int twoS) {
     }
   }
   if (noError) {
-    return;
+    return true;
   }
   Ref<GenericGFPoly> syndrome(new GenericGFPoly(*field, syndromeCoefficients));
-  vector<Ref<GenericGFPoly> > sigmaOmega =
-    runEuclideanAlgorithm(field->buildMonomial(twoS, 1), syndrome, twoS);
+  vector<Ref<GenericGFPoly> > sigmaOmega = runEuclideanAlgorithm(
+          field->buildMonomial(twoS, 1),
+          syndrome, twoS
+          );
+  if (sigmaOmega.empty()) {
+      return false;
+  }
+
   Ref<GenericGFPoly> sigma = sigmaOmega[0];
   Ref<GenericGFPoly> omega = sigmaOmega[1];
   ArrayRef<int> errorLocations = findErrorLocations(sigma);
+  if (!errorLocations) {
+      return false;
+  }
   ArrayRef<int> errorMagitudes = findErrorMagnitudes(omega, errorLocations);
   for (int i = 0; i < errorLocations->size(); i++) {
     int position = received->size() - 1 - field->log(errorLocations[i]);
     if (position < 0) {
-      throw ReedSolomonException("Bad error location");
+//      throw ReedSolomonException("Bad error location");
+        return false;
     }
     received[position] = GenericGF::addOrSubtract(received[position], errorMagitudes[i]);
   }
+  return true;
 }
 
 vector<Ref<GenericGFPoly> > ReedSolomonDecoder::runEuclideanAlgorithm(Ref<GenericGFPoly> a,
@@ -94,7 +105,8 @@ vector<Ref<GenericGFPoly> > ReedSolomonDecoder::runEuclideanAlgorithm(Ref<Generi
     // Divide rLastLast by rLast, with quotient q and remainder r
     if (rLast->isZero()) {
       // Oops, Euclidean algorithm already terminated?
-      throw ReedSolomonException("r_{i-1} was zero");
+      return {};
+//      throw ReedSolomonException("r_{i-1} was zero");
     }
     r = rLastLast;
     Ref<GenericGFPoly> q = field->getZero();
@@ -110,13 +122,15 @@ vector<Ref<GenericGFPoly> > ReedSolomonDecoder::runEuclideanAlgorithm(Ref<Generi
     t = q->multiply(tLast)->addOrSubtract(tLastLast);
 
     if (r->getDegree() >= rLast->getDegree()) {
-      throw IllegalStateException("Division algorithm failed to reduce polynomial?");
+        return {};
+//      throw IllegalStateException("Division algorithm failed to reduce polynomial?");
     }
   }
 
   int sigmaTildeAtZero = t->getCoefficient(0);
   if (sigmaTildeAtZero == 0) {
-    throw ReedSolomonException("sigmaTilde(0) was zero");
+      return {};
+//    throw ReedSolomonException("sigmaTilde(0) was zero");
   }
 
   int inverse = field->inverse(sigmaTildeAtZero);
@@ -145,7 +159,8 @@ ArrayRef<int> ReedSolomonDecoder::findErrorLocations(Ref<GenericGFPoly> errorLoc
     }
   }
   if (e != numErrors) {
-    throw ReedSolomonException("Error locator degree does not match number of roots");
+      return ArrayRef<int>();
+//    throw ReedSolomonException("Error locator degree does not match number of roots");
   }
   return result;
 }

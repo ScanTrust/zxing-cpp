@@ -30,7 +30,7 @@ namespace oned {
 class EAN13Reader : public UPCEANReader {
 private:
   std::vector<int> decodeMiddleCounters;
-  static void determineFirstDigit(std::string& resultString,
+  static bool determineFirstDigit(std::string& resultString,
                                   int lgPatternFound);
 
 public:

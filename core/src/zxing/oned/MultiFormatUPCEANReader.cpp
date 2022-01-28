@@ -67,10 +67,8 @@ Ref<Result> MultiFormatUPCEANReader::decodeRow(int rowNumber, Ref<BitArray> row)
   for (int i = 0, e = readers.size(); i < e; i++) {
     Ref<UPCEANReader> reader = readers[i];
     Ref<Result> result;
-    try {
-      result = reader->decodeRow(rowNumber, row, startGuardPattern);
-    } catch (ReaderException const& ignored) {
-      (void)ignored;
+    result = reader->decodeRow(rowNumber, row, startGuardPattern);
+    if (result.empty()) {
       continue;
     }
 
@@ -106,5 +104,5 @@ Ref<Result> MultiFormatUPCEANReader::decodeRow(int rowNumber, Ref<BitArray> row)
     return result;
   }
 
-  throw NotFoundException();
+  return Ref<Result>();
 }

@@ -60,9 +60,9 @@ class Detector : public Counted {
   int nbCenterLayers_;
   int shift_;
             
-  void extractParameters(std::vector<Ref<Point> > bullEyeCornerPoints);
+  bool extractParameters(std::vector<Ref<Point> > bullEyeCornerPoints);
   ArrayRef< Ref<ResultPoint> > getMatrixCornerPoints(std::vector<Ref<Point> > bullEyeCornerPoints);
-  static void correctParameterData(Ref<BitArray> parameterData, bool compact);
+  static bool correctParameterData(Ref<BitArray> parameterData, bool compact);
   std::vector<Ref<Point> > getBullEyeCornerPoints(Ref<Point> pCenter);
   Ref<Point> getMatrixCenter();
   Ref<BitMatrix> sampleGrid(Ref<BitMatrix> image,

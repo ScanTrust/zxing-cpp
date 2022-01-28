@@ -39,10 +39,10 @@ public:
 
   Ref<Result> decodeRow(int rowNumber, Ref<BitArray> row);
   
-  void validatePattern(int start);
+  bool validatePattern(int start);
 
 private:
-  void setCounters(Ref<BitArray> row);
+  bool setCounters(Ref<BitArray> row);
   void counterAppend(int e);
   int findStartPattern();
   

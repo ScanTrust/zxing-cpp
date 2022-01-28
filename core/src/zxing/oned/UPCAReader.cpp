@@ -54,6 +54,9 @@ int UPCAReader::decodeMiddle(Ref<BitArray> row,
 }
 
 Ref<Result> UPCAReader::maybeReturnResult(Ref<Result> result) {
+    if (result.empty()) {
+        return result;
+    }
   const std::string& text = (result->getText())->getText();
   if (text[0] == '0') {
     Ref<String> resultString(new String(text.substr(1)));
@@ -61,7 +64,7 @@ Ref<Result> UPCAReader::maybeReturnResult(Ref<Result> result) {
                                BarcodeFormat::UPC_A));
     return res;
   } else {
-    throw FormatException();
+    return Ref<Result>();
   }
 }
 

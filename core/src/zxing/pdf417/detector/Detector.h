@@ -62,7 +62,7 @@ protected:
   static int patternMatchVariance(ArrayRef<int>& counters, const int pattern[],
                                   int maxIndividualVariance);
 
-  static void correctVertices(Ref<BitMatrix> matrix,
+  static bool correctVertices(Ref<BitMatrix> matrix,
                               ArrayRef< Ref<ResultPoint> >& vertices,
                               bool upsideDown);
   static void findWideBarTopBottom(Ref<BitMatrix> matrix,
@@ -72,7 +72,7 @@ protected:
                                    int lenWideBar,
                                    int lenPattern,
                                    int nIncrement);
-  static void findCrossingPoint(ArrayRef< Ref<ResultPoint> >& vertices,
+  static bool findCrossingPoint(ArrayRef< Ref<ResultPoint> >& vertices,
                                 int idxResult,
                                 int idxLineA1,int idxLineA2,
                                 int idxLineB1,int idxLineB2,

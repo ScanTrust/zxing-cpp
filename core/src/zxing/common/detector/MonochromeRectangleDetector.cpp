@@ -31,40 +31,58 @@ using zxing::TwoInts;
 using zxing::MonochromeRectangleDetector;
 
 vector<Ref<ResultPoint> > MonochromeRectangleDetector::detect() {
-  int height = image_->getHeight();
-  int width = image_->getWidth();
-  int halfHeight = height / 2;
-  int halfWidth = width / 2;
-  int deltaY = std::max(1, height / (MAX_MODULES * 8));
-  int deltaX = std::max(1, width / (MAX_MODULES * 8));
+    int height = image_->getHeight();
+    int width = image_->getWidth();
+    int halfHeight = height / 2;
+    int halfWidth = width / 2;
+    int deltaY = std::max(1, height / (MAX_MODULES * 8));
+    int deltaX = std::max(1, width / (MAX_MODULES * 8));
 
-  int top = 0;
-  int bottom = height;
-  int left = 0;
-  int right = width;
-  Ref<ResultPoint> pointA(findCornerFromCenter(halfWidth, 0, left, right,
+    int top = 0;
+    int bottom = height;
+    int left = 0;
+    int right = width;
+    Ref<ResultPoint> pointA(findCornerFromCenter(halfWidth, 0, left, right,
                                                halfHeight, -deltaY, top, bottom, halfWidth / 2));
-  top = (int) pointA->getY() - 1;;
-  Ref<ResultPoint> pointB(findCornerFromCenter(halfWidth, -deltaX, left, right,
+    if (pointA.empty()) {
+      return {};
+    }
+    top = (int) pointA->getY() - 1;;
+
+    Ref<ResultPoint> pointB(findCornerFromCenter(halfWidth, -deltaX, left, right,
                                                halfHeight, 0, top, bottom, halfHeight / 2));
-  left = (int) pointB->getX() - 1;
-  Ref<ResultPoint> pointC(findCornerFromCenter(halfWidth, deltaX, left, right,
+    if (pointB.empty()) {
+        return {};
+    }
+    left = (int) pointB->getX() - 1;
+
+    Ref<ResultPoint> pointC(findCornerFromCenter(halfWidth, deltaX, left, right,
                                                halfHeight, 0, top, bottom, halfHeight / 2));
-  right = (int) pointC->getX() + 1;
-  Ref<ResultPoint> pointD(findCornerFromCenter(halfWidth, 0, left, right,
+    if (pointC.empty()) {
+        return {};
+    }
+    right = (int) pointC->getX() + 1;
+
+    Ref<ResultPoint> pointD(findCornerFromCenter(halfWidth, 0, left, right,
                                                halfHeight, deltaY, top, bottom, halfWidth / 2));
-  bottom = (int) pointD->getY() + 1;
+    if (pointD.empty()) {
+        return {};
+    }
+    bottom = (int) pointD->getY() + 1;
 
-  // Go try to find point A again with better information -- might have been off at first.
-  pointA.reset(findCornerFromCenter(halfWidth, 0, left, right,
+    // Go try to find point A again with better information -- might have been off at first.
+    pointA.reset(findCornerFromCenter(halfWidth, 0, left, right,
                                     halfHeight, -deltaY, top, bottom, halfWidth / 4));
+    if (pointA.empty()) {
+        return {};
+    }
 
-  vector<Ref<ResultPoint> > corners(4);
-  corners[0].reset(pointA);
-  corners[1].reset(pointB);
-  corners[2].reset(pointC);
-  corners[3].reset(pointD);
-  return corners;
+    vector<Ref<ResultPoint> > corners(4);
+    corners[0].reset(pointA);
+    corners[1].reset(pointB);
+    corners[2].reset(pointC);
+    corners[3].reset(pointD);
+    return corners;
 }
 
 Ref<ResultPoint> MonochromeRectangleDetector::findCornerFromCenter(int centerX, int deltaX, int left, int right,
@@ -83,7 +101,8 @@ Ref<ResultPoint> MonochromeRectangleDetector::findCornerFromCenter(int centerX, 
     }
     if (range == NULL) {
       if (lastRange == NULL) {
-        throw NotFoundException("Couldn't find corners (lastRange = NULL) ");
+          return Ref<ResultPoint>();
+        //throw NotFoundException("Couldn't find corners (lastRange = NULL) ");
       } else {
         // lastRange was found
         if (deltaX == 0) {
@@ -117,8 +136,9 @@ Ref<ResultPoint> MonochromeRectangleDetector::findCornerFromCenter(int centerX, 
       }
     }
     lastRange = range;
-  }   
-  throw NotFoundException("Couldn't find corners");
+  }
+  return Ref<ResultPoint>();
+  //throw NotFoundException("Couldn't find corners");
 }
 
 Ref<TwoInts> MonochromeRectangleDetector::blackWhiteRange(int fixedDimension, int maxWhiteRun, int minDim, int maxDim,

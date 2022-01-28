@@ -34,17 +34,27 @@ DataMatrixReader::DataMatrixReader() :
 
 Ref<Result> DataMatrixReader::decode(Ref<BinaryBitmap> image, DecodeHints hints) {
   (void)hints;
-  Detector detector(image->getBlackMatrix());
-  Ref<DetectorResult> detectorResult(detector.detect());
-  ArrayRef< Ref<ResultPoint> > points(detectorResult->getPoints());
+    auto blackMatrix = image->getBlackMatrix();
+    if (blackMatrix.empty()) {
+        return Ref<Result>();
+    }
+    Detector detector(blackMatrix);
+    Ref<DetectorResult> detectorResult(detector.detect());
+    if (detectorResult.empty()) {
+        return Ref<Result>();
+    }
+    ArrayRef< Ref<ResultPoint> > points(detectorResult->getPoints());
 
 
-  Ref<DecoderResult> decoderResult(decoder_.decode(detectorResult->getBits()));
+    Ref<DecoderResult> decoderResult(decoder_.decode(detectorResult->getBits()));
+    if (decoderResult.empty()) {
+        return Ref<Result>();
+    }
 
-  Ref<Result> result(
+    Ref<Result> result(
     new Result(decoderResult->getText(), decoderResult->getRawBytes(), points, BarcodeFormat::DATA_MATRIX));
 
-  return result;
+    return result;
 }
 
 DataMatrixReader::~DataMatrixReader() {

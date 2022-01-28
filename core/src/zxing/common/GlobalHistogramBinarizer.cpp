@@ -78,6 +78,10 @@ Ref<BitArray> GlobalHistogramBinarizer::getBlackRow(int y, Ref<BitArray> row) {
     localBuckets[pixel >> LUMINANCE_SHIFT]++;
   }
   int blackPoint = estimateBlackPoint(localBuckets);
+
+  if (blackPoint < 0) {
+      return Ref<BitArray>();
+  }
   // std::cerr << "gbr bp " << y << " " << blackPoint << std::endl;
 
   int left = localLuminances[0] & 0xff;
@@ -117,6 +121,9 @@ Ref<BitMatrix> GlobalHistogramBinarizer::getBlackMatrix() {
   }
 
   int blackPoint = estimateBlackPoint(localBuckets);
+  if (blackPoint < 0) {
+      return Ref<BitMatrix>();
+  }
 
   ArrayRef<char> localLuminances = source.getMatrix();
   for (int y = 0; y < height; y++) {
@@ -185,7 +192,7 @@ int GlobalHistogramBinarizer::estimateBlackPoint(ArrayRef<int> const& buckets) {
   // "<= 1/16 of the total histogram buckets apart"
   // std::cerr << "! " << secondPeak << " " << firstPeak << " " << numBuckets << std::endl;
   if (secondPeak - firstPeak <= numBuckets >> 4) {
-    throw NotFoundException();
+    return -1;
   }
 
   // Find a valley between them that is low and closer to the white peak

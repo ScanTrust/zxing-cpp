@@ -54,6 +54,9 @@ UPCEReader::UPCEReader() {
 }
 
 int UPCEReader::decodeMiddle(Ref<BitArray> row, Range const& startRange, string& result) {
+    if (!startRange.isValid()) {
+        return -1;
+    }
   vector<int>& counters (decodeMiddleCounters);
   counters.clear();
   counters.resize(4);
@@ -64,16 +67,22 @@ int UPCEReader::decodeMiddle(Ref<BitArray> row, Range const& startRange, string&
 
   for (int x = 0; x < 6 && rowOffset < end; x++) {
     int bestMatch = decodeDigit(row, counters, rowOffset, L_AND_G_PATTERNS);
+    // check decodeDigit success
+    if (bestMatch < 0) {
+      return -1;
+    }
     result.append(1, (char) ('0' + bestMatch % 10));
     for (int i = 0, e = counters.size(); i < e; i++) {
-      rowOffset += counters[i];
+        rowOffset += counters[i];
     }
     if (bestMatch >= 10) {
-      lgPatternFound |= 1 << (5 - x);
+        lgPatternFound |= 1 << (5 - x);
     }
   }
 
-  determineNumSysAndCheckDigit(result, lgPatternFound);
+  if(!determineNumSysAndCheckDigit(result, lgPatternFound)) {
+      return -1;
+  }
 
   return rowOffset;
 }

@@ -52,10 +52,18 @@ Ref<AztecDetectorResult> Detector::detect() {
   Ref<Point> pCenter = getMatrixCenter();
             
   std::vector<Ref<Point> > bullEyeCornerPoints = getBullEyeCornerPoints(pCenter);
+  if (bullEyeCornerPoints.empty()) {
+      return Ref<AztecDetectorResult>();
+  }
             
-  extractParameters(bullEyeCornerPoints);
+  if (!extractParameters(bullEyeCornerPoints)) {
+      return Ref<AztecDetectorResult>();
+  }
   
   ArrayRef< Ref<ResultPoint> > corners = getMatrixCornerPoints(bullEyeCornerPoints);
+  if (!corners) {
+      return Ref<AztecDetectorResult>();
+  }
             
   Ref<BitMatrix> bits =
     sampleGrid(image_,
@@ -63,13 +71,17 @@ Ref<AztecDetectorResult> Detector::detect() {
                corners[(shift_+3)%4],
                corners[(shift_+2)%4],
                corners[(shift_+1)%4]);
+
+  if (!bits) {
+      return Ref<AztecDetectorResult>();
+  }
             
   // std::printf("------------\ndetected: compact:%s, nbDataBlocks:%d, nbLayers:%d\n------------\n",compact_?"YES":"NO", nbDataBlocks_, nbLayers_);
             
   return Ref<AztecDetectorResult>(new AztecDetectorResult(bits, corners, compact_, nbDataBlocks_, nbLayers_));
 }
         
-void Detector::extractParameters(std::vector<Ref<Point> > bullEyeCornerPoints) {
+bool Detector::extractParameters(std::vector<Ref<Point> > bullEyeCornerPoints) {
   int twoCenterLayers = 2 * nbCenterLayers_;
   // get the bits around the bull's eye
   Ref<BitArray> resab = sampleLine(bullEyeCornerPoints[0], bullEyeCornerPoints[1], twoCenterLayers+1);
@@ -88,7 +100,8 @@ void Detector::extractParameters(std::vector<Ref<Point> > bullEyeCornerPoints) {
     shift_ = 3;
   } else {
     // std::printf("could not detemine orientation\n");
-    throw ReaderException("could not determine orientation");
+//    throw ReaderException("could not determine orientation");
+    return false;
   }
             
   //d      a
@@ -130,9 +143,13 @@ void Detector::extractParameters(std::vector<Ref<Point> > bullEyeCornerPoints) {
     }
   }
             
-  correctParameterData(parameterData, compact_);
+  if (!correctParameterData(parameterData, compact_)) {
+      return false;
+  }
             
   getParameters(parameterData);
+
+  return true;
 }
         
 ArrayRef< Ref<ResultPoint> >
@@ -165,7 +182,8 @@ Detector::getMatrixCornerPoints(std::vector<Ref<Point> > bullEyeCornerPoints) {
 
       !isValid(targetcx, targetcy) ||
       !isValid(targetdx, targetdy)) {
-    throw ReaderException("matrix extends over image bounds");
+//    throw ReaderException("matrix extends over image bounds");
+    return {};
   }
   Array< Ref<ResultPoint> >* array = new Array< Ref<ResultPoint> >();
   vector< Ref<ResultPoint> >& returnValue (array->values());
@@ -176,7 +194,7 @@ Detector::getMatrixCornerPoints(std::vector<Ref<Point> > bullEyeCornerPoints) {
   return ArrayRef< Ref<ResultPoint> >(array);
 }
         
-void Detector::correctParameterData(Ref<zxing::BitArray> parameterData, bool compact) {
+bool Detector::correctParameterData(Ref<zxing::BitArray> parameterData, bool compact) {
   int numCodewords;
   int numDataCodewords;
             
@@ -202,16 +220,22 @@ void Detector::correctParameterData(Ref<zxing::BitArray> parameterData, bool com
       flag <<= 1;
     }
   }
-                        
-  try {
-    // std::printf("parameter data reed solomon\n");
+
     ReedSolomonDecoder rsDecoder(GenericGF::AZTEC_PARAM);
-    rsDecoder.decode(parameterWords, numECCodewords);
-  } catch (ReedSolomonException const& ignored) {
-    (void)ignored;
-    // std::printf("reed solomon decoding failed\n");
-    throw ReaderException("failed to decode parameter data");
-  }
+    if (!rsDecoder.decode(parameterWords, numECCodewords)) {
+        return false;
+    }
+                        
+//  try {
+//    // std::printf("parameter data reed solomon\n");
+//    ReedSolomonDecoder rsDecoder(GenericGF::AZTEC_PARAM);
+//    rsDecoder.decode(parameterWords, numECCodewords);
+//  } catch (ReedSolomonException const& ignored) {
+//    (void)ignored;
+//    // std::printf("reed solomon decoding failed\n");
+//    throw ReaderException("failed to decode parameter data");
+//    return false;
+//  }
             
   parameterData->clear();
   for (int i = 0; i < numDataCodewords; i++) {
@@ -223,6 +247,7 @@ void Detector::correctParameterData(Ref<zxing::BitArray> parameterData, bool com
       flag <<= 1;
     }
   }
+  return true;
 }
         
 std::vector<Ref<Point> > Detector::getBullEyeCornerPoints(Ref<zxing::aztec::Point> pCenter) {
@@ -259,13 +284,12 @@ std::vector<Ref<Point> > Detector::getBullEyeCornerPoints(Ref<zxing::aztec::Poin
   }
             
   if (nbCenterLayers_ != 5 && nbCenterLayers_ != 7) {
-    throw ReaderException("encountered wrong bullseye ring count");
+      return {};
+//    throw ReaderException("encountered wrong bullseye ring count");
   }
             
   compact_ = nbCenterLayers_ == 5;
-            
-            
-            
+
   float ratio = 0.75f*2 / (2*nbCenterLayers_-3);
             
   int dx = pina->getX() - pind->getX();
@@ -288,7 +312,8 @@ std::vector<Ref<Point> > Detector::getBullEyeCornerPoints(Ref<zxing::aztec::Poin
       !isValid(targetbx, targetby) ||
       !isValid(targetcx, targetcy) ||
       !isValid(targetdx, targetdy)) {
-    throw ReaderException("bullseye extends over image bounds");
+      return {};
+//    throw ReaderException("bullseye extends over image bounds");
   }
             
   std::vector<Ref<Point> > returnValue;
@@ -302,54 +327,49 @@ std::vector<Ref<Point> > Detector::getBullEyeCornerPoints(Ref<zxing::aztec::Poin
 }
         
 Ref<Point> Detector::getMatrixCenter() {
-  Ref<ResultPoint> pointA, pointB, pointC, pointD;
-  try {
-                
+    Ref<ResultPoint> pointA, pointB, pointC, pointD;
+
     std::vector<Ref<ResultPoint> > cornerPoints = WhiteRectangleDetector(image_).detect();
-    pointA = cornerPoints[0];
-    pointB = cornerPoints[1];
-    pointC = cornerPoints[2];
-    pointD = cornerPoints[3];
-                
-  } catch (NotFoundException const& e) {
-    (void)e;
-                
-    int cx = image_->getWidth() / 2;
-    int cy = image_->getHeight() / 2;
-                
-    pointA = getFirstDifferent(Ref<Point>(new Point(cx+7, cy-7)), false,  1, -1)->toResultPoint();
-    pointB = getFirstDifferent(Ref<Point>(new Point(cx+7, cy+7)), false,  1,  1)->toResultPoint();
-    pointC = getFirstDifferent(Ref<Point>(new Point(cx-7, cy+7)), false, -1, -1)->toResultPoint();
-    pointD = getFirstDifferent(Ref<Point>(new Point(cx-7, cy-7)), false, -1, -1)->toResultPoint();
-                                      
-  }
-            
-  int cx = MathUtils::round((pointA->getX() + pointD->getX() + pointB->getX() + pointC->getX()) / 4.0f);
-  int cy = MathUtils::round((pointA->getY() + pointD->getY() + pointB->getY() + pointC->getY()) / 4.0f);
-            
-  try {
-                
-    std::vector<Ref<ResultPoint> > cornerPoints = WhiteRectangleDetector(image_, 15, cx, cy).detect();
-    pointA = cornerPoints[0];
-    pointB = cornerPoints[1];
-    pointC = cornerPoints[2];
-    pointD = cornerPoints[3];
-                
-  } catch (NotFoundException const& e) {
-    (void)e;
-                
-    pointA = getFirstDifferent(Ref<Point>(new Point(cx+7, cy-7)), false,  1, -1)->toResultPoint();
-    pointB = getFirstDifferent(Ref<Point>(new Point(cx+7, cy+7)), false,  1,  1)->toResultPoint();
-    pointC = getFirstDifferent(Ref<Point>(new Point(cx-7, cy+7)), false, -1, 1)->toResultPoint();
-    pointD = getFirstDifferent(Ref<Point>(new Point(cx-7, cy-7)), false, -1, -1)->toResultPoint();
-                
-  }
-            
-  cx = MathUtils::round((pointA->getX() + pointD->getX() + pointB->getX() + pointC->getX()) / 4.0f);
-  cy = MathUtils::round((pointA->getY() + pointD->getY() + pointB->getY() + pointC->getY()) / 4.0f);
-            
-  return Ref<Point>(new Point(cx, cy));
-            
+    if (!cornerPoints.empty()) {
+        pointA = cornerPoints[0];
+        pointB = cornerPoints[1];
+        pointC = cornerPoints[2];
+        pointD = cornerPoints[3];
+
+    } else {
+        int cx = image_->getWidth() / 2;
+        int cy = image_->getHeight() / 2;
+
+        pointA = getFirstDifferent(Ref<Point>(new Point(cx+7, cy-7)), false,  1, -1)->toResultPoint();
+        pointB = getFirstDifferent(Ref<Point>(new Point(cx+7, cy+7)), false,  1,  1)->toResultPoint();
+        pointC = getFirstDifferent(Ref<Point>(new Point(cx-7, cy+7)), false, -1, -1)->toResultPoint();
+        pointD = getFirstDifferent(Ref<Point>(new Point(cx-7, cy-7)), false, -1, -1)->toResultPoint();
+    }
+
+    int cx = MathUtils::round((pointA->getX() + pointD->getX() + pointB->getX() + pointC->getX()) / 4.0f);
+    int cy = MathUtils::round((pointA->getY() + pointD->getY() + pointB->getY() + pointC->getY()) / 4.0f);
+
+
+    cornerPoints = WhiteRectangleDetector(image_, 15, cx, cy).detect();
+
+    if (!cornerPoints.empty()) {
+
+        pointA = cornerPoints[0];
+        pointB = cornerPoints[1];
+        pointC = cornerPoints[2];
+        pointD = cornerPoints[3];
+
+    } else {
+        pointA = getFirstDifferent(Ref<Point>(new Point(cx+7, cy-7)), false,  1, -1)->toResultPoint();
+        pointB = getFirstDifferent(Ref<Point>(new Point(cx+7, cy+7)), false,  1,  1)->toResultPoint();
+        pointC = getFirstDifferent(Ref<Point>(new Point(cx-7, cy+7)), false, -1, 1)->toResultPoint();
+        pointD = getFirstDifferent(Ref<Point>(new Point(cx-7, cy-7)), false, -1, -1)->toResultPoint();
+    }
+
+    cx = MathUtils::round((pointA->getX() + pointD->getX() + pointB->getX() + pointC->getX()) / 4.0f);
+    cy = MathUtils::round((pointA->getY() + pointD->getY() + pointB->getY() + pointC->getY()) / 4.0f);
+
+    return Ref<Point>(new Point(cx, cy));
 }
         
 Ref<BitMatrix> Detector::sampleGrid(Ref<zxing::BitMatrix> image,

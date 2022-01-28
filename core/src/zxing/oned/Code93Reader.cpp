@@ -66,6 +66,9 @@ Code93Reader::Code93Reader() {
 
 Ref<Result> Code93Reader::decodeRow(int rowNumber, Ref<BitArray> row) {
   Range start (findAsteriskPattern(row));
+  if (!start.isValid()) {
+      return Ref<Result>();
+  }
   // Read off white space    
   int nextStart = row->getNextSet(start[1]);
   int end = row->getSize();
@@ -81,15 +84,20 @@ Ref<Result> Code93Reader::decodeRow(int rowNumber, Ref<BitArray> row) {
   char decodedChar;
   int lastStart;
   do {
-    recordPattern(row, nextStart, theCounters);
+    if (!recordPattern(row, nextStart, theCounters)) {
+        return Ref<Result>();
+    }
     int pattern = toPattern(theCounters);
     if (pattern < 0) {
-      throw NotFoundException();
+        return Ref<Result>();
+//      throw NotFoundException();
     }
-    decodedChar = patternToChar(pattern);
+    if(!patternToChar(pattern, &decodedChar)) {
+        return Ref<Result>();
+    }
     result.append(1, decodedChar);
     lastStart = nextStart;
-    for(int i=0, e=theCounters.size(); i < e; ++i) {
+    for(int i=0, e = theCounters.size(); i < e; ++i) {
       nextStart += theCounters[i];
     }
     // Read off white space
@@ -105,19 +113,26 @@ Ref<Result> Code93Reader::decodeRow(int rowNumber, Ref<BitArray> row) {
   
   // Should be at least one more black module
   if (nextStart == end || !row->get(nextStart)) {
-    throw NotFoundException();
+      return Ref<Result>();
+//    throw NotFoundException();
   }
 
   if (result.length() < 2) {
     // false positive -- need at least 2 checksum digits
-    throw NotFoundException();
+      return Ref<Result>();
+//    throw NotFoundException();
   }
 
-  checkChecksums(result);
+  if(!checkChecksums(result)) {
+      return Ref<Result>();
+  }
   // Remove checksum digits
   result.resize(result.length() - 2);
 
   Ref<String> resultString = decodeExtended(result);
+  if (resultString.empty()) {
+      return Ref<Result>();
+  }
 
   float left = (float) (start[1] + start[0]) / 2.0f;
   float right = lastStart + lastPatternSize / 2.0f;
@@ -172,7 +187,8 @@ Code93Reader::Range Code93Reader::findAsteriskPattern(Ref<BitArray> row)  {
       isWhite = !isWhite;
     }
   }
-  throw NotFoundException();
+//  throw NotFoundException();
+  return {};
 }
 
 int Code93Reader::toPattern(vector<int>& counters) {
@@ -198,13 +214,14 @@ int Code93Reader::toPattern(vector<int>& counters) {
   return pattern;
 }
 
-char Code93Reader::patternToChar(int pattern)  {
+bool Code93Reader::patternToChar(int pattern, char* out)  {
   for (int i = 0; i < CHARACTER_ENCODINGS_LENGTH; i++) {
     if (CHARACTER_ENCODINGS[i] == pattern) {
-      return ALPHABET[i];
+        *out = ALPHABET[i];
+        return true;
     }
   }
-  throw NotFoundException();
+  return false;
 }
 
 Ref<String> Code93Reader::decodeExtended(string const& encoded)  {
@@ -214,7 +231,7 @@ Ref<String> Code93Reader::decodeExtended(string const& encoded)  {
     char c = encoded[i];
     if (c >= 'a' && c <= 'd') {
       if (i >= length - 1) {
-        throw FormatException::getFormatInstance();
+        return Ref<String>();
       }
       char next = encoded[i + 1];
       char decodedChar = '\0';
@@ -224,7 +241,7 @@ Ref<String> Code93Reader::decodeExtended(string const& encoded)  {
         if (next >= 'A' && next <= 'Z') {
           decodedChar = (char) (next + 32);
         } else {
-          throw FormatException::getFormatInstance();
+            return Ref<String>();
         }
         break;
       case 'a':
@@ -232,7 +249,7 @@ Ref<String> Code93Reader::decodeExtended(string const& encoded)  {
         if (next >= 'A' && next <= 'Z') {
           decodedChar = (char) (next - 64);
         } else {
-          throw FormatException::getFormatInstance();
+            return Ref<String>();
         }
         break;
       case 'b':
@@ -252,7 +269,7 @@ Ref<String> Code93Reader::decodeExtended(string const& encoded)  {
           // %T to %Z all map to DEL (127)
           decodedChar = 127;
         } else {
-          throw FormatException::getFormatInstance();
+            return Ref<String>();
         }
         break;
       case 'c':
@@ -262,7 +279,7 @@ Ref<String> Code93Reader::decodeExtended(string const& encoded)  {
         } else if (next == 'Z') {
           decodedChar = ':';
         } else {
-          throw FormatException::getFormatInstance();
+            return Ref<String>();
         }
         break;
       }
@@ -276,13 +293,13 @@ Ref<String> Code93Reader::decodeExtended(string const& encoded)  {
   return Ref<String>(new String(decoded));
 }
 
-void Code93Reader::checkChecksums(string const& result) {
+bool Code93Reader::checkChecksums(string const& result) {
   int length = result.length();
-  checkOneChecksum(result, length - 2, 20);
-  checkOneChecksum(result, length - 1, 15);
+  return checkOneChecksum(result, length - 2, 20) &&
+         checkOneChecksum(result, length - 1, 15);
 }
 
-void Code93Reader::checkOneChecksum(string const& result,
+bool Code93Reader::checkOneChecksum(string const& result,
                                     int checkPosition,
                                     int weightMax) {
   int weight = 1;
@@ -294,6 +311,7 @@ void Code93Reader::checkOneChecksum(string const& result,
     }
   }
   if (result[checkPosition] != ALPHABET[total % 47]) {
-    throw ChecksumException();
+    return false;
   }
+  return true;
 }

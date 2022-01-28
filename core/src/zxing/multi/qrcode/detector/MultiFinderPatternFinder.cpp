@@ -227,9 +227,9 @@ vector<vector<Ref<FinderPattern> > > MultiFinderPatternFinder::selectBestPattern
       } // end iterate p3
     } // end iterate p2
   } // end iterate p1
-  if (results.empty()){
-    // Nothing found!
-    throw ReaderException("No code detected");    
-  }
+//  if (results.empty()){
+//    // Nothing found!
+//    throw ReaderException("No code detected");
+//  }
   return results;
 }

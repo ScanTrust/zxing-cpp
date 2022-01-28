@@ -157,12 +157,21 @@ Ref<DecoderResult> Decoder::decode(Ref<zxing::aztec::AztecDetectorResult> detect
             
   // std::printf("extracting bits\n");
   Ref<BitArray> rawbits = extractBits(matrix);
+  if (!rawbits) {
+      return Ref<DecoderResult>();
+  }
             
   // std::printf("correcting bits\n");
   Ref<BitArray> aCorrectedBits = correctBits(rawbits);
+  if (!aCorrectedBits) {
+      return Ref<DecoderResult>();
+  }
             
   // std::printf("decoding bits\n");
   Ref<String> result = getEncodedData(aCorrectedBits);
+  if (!result) {
+      return Ref<DecoderResult>();
+  }
             
   // std::printf("constructing array\n");
   ArrayRef<char> arrayOut(aCorrectedBits->getSize());
@@ -179,7 +188,8 @@ Ref<String> Decoder::getEncodedData(Ref<zxing::BitArray> correctedBits) {
   int endIndex = codewordSize_ * ddata_->getNBDatablocks() - invertedBitCount_;
   if (endIndex > (int)correctedBits->getSize()) {
     // std::printf("invalid input\n");
-    throw FormatException("invalid input data");
+//    throw FormatException("invalid input data");
+    return Ref<String>();
   }
             
   Table lastTable = UPPER;
@@ -328,18 +338,26 @@ Ref<BitArray> Decoder::correctBits(Ref<zxing::BitArray> rawbits) {
     //
     //
   }
-            
-  try {
+
     ReedSolomonDecoder rsDecoder(gf);
-    rsDecoder.decode(dataWords, numECCodewords);
-  } catch (ReedSolomonException const& ignored) {
-    (void)ignored;
-    // std::printf("got reed solomon exception:%s, throwing formatexception\n", rse.what());
-    throw FormatException("rs decoding failed");
-  } catch (IllegalArgumentException const& iae) {
-    (void)iae;
-    // std::printf("illegal argument exception: %s", iae.what());
-  }
+    if (!rsDecoder.decode(dataWords, numECCodewords)) {
+        return Ref<BitArray>();
+    }
+            
+//  try {
+//    ReedSolomonDecoder rsDecoder(gf);
+//    if (!rsDecoder.decode(dataWords, numECCodewords)) {
+//        return Ref<BitArray>();
+//    }
+//  } catch (ReedSolomonException const& ignored) {
+//    (void)ignored;
+//    // std::printf("got reed solomon exception:%s, throwing formatexception\n", rse.what());
+//    throw FormatException("rs decoding failed");
+//      return Ref<BitArray>();
+//  } catch (IllegalArgumentException const& iae) {
+//    (void)iae;
+//    // std::printf("illegal argument exception: %s", iae.what());
+//  }
             
   offset = 0;
   invertedBitCount_ = 0;
@@ -358,7 +376,8 @@ Ref<BitArray> Decoder::correctBits(Ref<zxing::BitArray> rawbits) {
       if (seriesCount == codewordSize_ - 1) {
                         
         if (color == seriesColor) {
-          throw FormatException("bit was not inverted");
+//          throw FormatException("bit was not inverted");
+            return Ref<BitArray>();
         }
                         
         seriesColor = false;
@@ -392,13 +411,15 @@ Ref<BitArray> Decoder::extractBits(Ref<zxing::BitMatrix> matrix) {
             
   if (ddata_->isCompact()) {
     if (ddata_->getNBLayers() > 5) { //NB_BITS_COMPACT length
-      throw FormatException("data is too long");
+//      throw FormatException("data is too long");
+        return Ref<BitArray>();
     }
     rawbits = std::vector<bool>(NB_BITS_COMPACT[ddata_->getNBLayers()]);
     numCodewords_ = NB_DATABLOCK_COMPACT[ddata_->getNBLayers()];
   } else {
     if (ddata_->getNBLayers() > 33) { //NB_BITS length
-      throw FormatException("data is too long");
+//      throw FormatException("data is too long");
+        return Ref<BitArray>();
     }
     rawbits = std::vector<bool>(NB_BITS[ddata_->getNBLayers()]);
     numCodewords_ = NB_DATABLOCK[ddata_->getNBLayers()];

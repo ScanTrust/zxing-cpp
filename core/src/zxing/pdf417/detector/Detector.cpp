@@ -84,6 +84,9 @@ Ref<DetectorResult> Detector::detect(DecodeHints const& hints) {
   (void)hints;
   // Fetch the 1 bit matrix once up front.
   Ref<BitMatrix> matrix = image_->getBlackMatrix();
+  if (matrix.empty()) {
+      return Ref<DetectorResult>();
+  }
 
   // Try to find the vertices assuming the image is upright.
   const int rowStep = 8;
@@ -92,25 +95,32 @@ Ref<DetectorResult> Detector::detect(DecodeHints const& hints) {
     // Maybe the image is rotated 180 degrees?
     vertices = findVertices180(matrix, rowStep);
     if (vertices) {
-      correctVertices(matrix, vertices, true);
+      if (!correctVertices(matrix, vertices, true)) {
+          return Ref<DetectorResult>();
+      }
     }
   } else {
-    correctVertices(matrix, vertices, false);
+    if (!correctVertices(matrix, vertices, false)) {
+        return Ref<DetectorResult>();
+    }
   }
 
   if (!vertices) {
-    throw NotFoundException("No vertices found.");
+      return Ref<DetectorResult>();
+//    throw NotFoundException("No vertices found.");
   }
   
   float moduleWidth = computeModuleWidth(vertices);
   if (moduleWidth < 1.0f) {
-    throw NotFoundException("Bad module width.");
+      return Ref<DetectorResult>();
+//    throw NotFoundException("Bad module width.");
   }
   
   int dimension = computeDimension(vertices[12], vertices[14],
                                    vertices[13], vertices[15], moduleWidth);
   if (dimension < 1) {
-    throw NotFoundException("Bad dimension.");
+      return Ref<DetectorResult>();
+//    throw NotFoundException("Bad dimension.");
   }
   
   int yDimension = max(computeYDimension(vertices[12], vertices[14],
@@ -118,6 +128,9 @@ Ref<DetectorResult> Detector::detect(DecodeHints const& hints) {
 
   // Deskew and sample lines from image.
   Ref<BitMatrix> linesMatrix = sampleLines(vertices, dimension, yDimension);
+  if (!linesMatrix) {
+      return Ref<DetectorResult>();
+  }
   Ref<BitMatrix> linesGrid(LinesSampler(linesMatrix, dimension).sample());
 
   ArrayRef< Ref<ResultPoint> > points(4);
@@ -406,24 +419,26 @@ int Detector::patternMatchVariance(ArrayRef<int>& counters,
  *           vertices[15] x,y final bottom right codeword area
  * @param upsideDown true if rotated by 180 degree.
  */
-void Detector::correctVertices(Ref<BitMatrix> matrix,
+bool Detector::correctVertices(Ref<BitMatrix> matrix,
                                ArrayRef< Ref<ResultPoint> >& vertices,
                                bool upsideDown)
 {
   bool isLowLeft = abs(vertices[4]->getY() - vertices[5]->getY()) < 20.0;
   bool isLowRight = abs(vertices[6]->getY() - vertices[7]->getY()) < 20.0;
   if (isLowLeft || isLowRight) {
-    throw NotFoundException("Cannot find enough PDF417 guard patterns!");
+      return false;
+//    throw NotFoundException("Cannot find enough PDF417 guard patterns!");
   } else {
     findWideBarTopBottom(matrix, vertices, 0, 0,  8, 17, upsideDown ? 1 : -1);
     findWideBarTopBottom(matrix, vertices, 1, 0,  8, 17, upsideDown ? -1 : 1);
     findWideBarTopBottom(matrix, vertices, 2, 11, 7, 18, upsideDown ? 1 : -1);
     findWideBarTopBottom(matrix, vertices, 3, 11, 7, 18, upsideDown ? -1 : 1);
-    findCrossingPoint(vertices, 12, 4, 5, 8, 10, matrix);
-    findCrossingPoint(vertices, 13, 4, 5, 9, 11, matrix);
-    findCrossingPoint(vertices, 14, 6, 7, 8, 10, matrix);
-    findCrossingPoint(vertices, 15, 6, 7, 9, 11, matrix);
+    if (!findCrossingPoint(vertices, 12, 4, 5, 8, 10, matrix)) {return false;}
+    if (!findCrossingPoint(vertices, 13, 4, 5, 9, 11, matrix)) {return false;}
+    if (!findCrossingPoint(vertices, 14, 6, 7, 8, 10, matrix)) {return false;}
+    if (!findCrossingPoint(vertices, 15, 6, 7, 9, 11, matrix)) {return false;}
   }
+  return true;
 }
 
 /**
@@ -513,7 +528,7 @@ void Detector::findWideBarTopBottom(Ref<BitMatrix> matrix,
  * @return Returns true when the result is valid and lies inside the matrix. Otherwise throws an
  * exception.
  **/
-void Detector::findCrossingPoint(ArrayRef< Ref<ResultPoint> >& vertices,
+bool Detector::findCrossingPoint(ArrayRef< Ref<ResultPoint> >& vertices,
                                  int idxResult,
                                  int idxLineA1, int idxLineA2,
                                  int idxLineB1, int idxLineB2,
@@ -527,16 +542,19 @@ void Detector::findCrossingPoint(ArrayRef< Ref<ResultPoint> >& vertices,
   Point result(intersection(Line(p1, p2), Line(p3, p4)));
   if (result.x == numeric_limits<float>::infinity() ||
       result.y == numeric_limits<float>::infinity()) {
-    throw NotFoundException("PDF:Detector: cannot find the crossing of parallel lines!");
+      return false;
+//    throw NotFoundException("PDF:Detector: cannot find the crossing of parallel lines!");
   }
 
   int x = Math::round(result.x);
   int y = Math::round(result.y);
   if (x < 0 || x >= (int)matrix->getWidth() || y < 0 || y >= (int)matrix->getHeight()) {
-    throw NotFoundException("PDF:Detector: crossing points out of region!");
+      return false;
+//    throw NotFoundException("PDF:Detector: crossing points out of region!");
   }
 
   vertices[idxResult] = Ref<ResultPoint>(new ResultPoint(result.x, result.y));
+  return true;
 }
 
 /**
@@ -657,8 +675,13 @@ Ref<BitMatrix> Detector::sampleLines(ArrayRef< Ref<ResultPoint> > const& vertice
           vertices[13]->getX(), vertices[13]->getY(),
           vertices[15]->getX(), vertices[15]->getY()));
 
-  Ref<BitMatrix> linesMatrix = GridSampler::getInstance().sampleGrid(
-      image_->getBlackMatrix(), sampleDimensionX, sampleDimensionY, transform);
+    auto blackMatrix = image_->getBlackMatrix();
+    if (blackMatrix.empty()) {
+        return blackMatrix;
+    }
+
+    Ref<BitMatrix> linesMatrix = GridSampler::getInstance().sampleGrid(
+            blackMatrix, sampleDimensionX, sampleDimensionY, transform);
 
 
   return linesMatrix;

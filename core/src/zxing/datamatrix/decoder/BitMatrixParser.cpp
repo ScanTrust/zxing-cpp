@@ -30,20 +30,31 @@ int BitMatrixParser::copyBit(size_t x, size_t y, int versionBits) {
   return bitMatrix_->get(x, y) ? (versionBits << 1) | 0x1 : versionBits << 1;
 }
 
+bool BitMatrixParser::isValid() const {
+    return isValid_;
+}
+
 BitMatrixParser::BitMatrixParser(Ref<BitMatrix> bitMatrix) : bitMatrix_(NULL),
                                                              parsedVersion_(NULL),
                                                              readBitMatrix_(NULL) {
   size_t dimension = bitMatrix->getHeight();
-  if (dimension < 8 || dimension > 144 || (dimension & 0x01) != 0)
-    throw ReaderException("Dimension must be even, > 8 < 144");
+  if (dimension < 8 || dimension > 144 || (dimension & 0x01) != 0) {
+    isValid_ = false;
+    return;
+//    throw ReaderException("Dimension must be even, > 8 < 144");
+  }
 
   parsedVersion_ = readVersion(bitMatrix);
   bitMatrix_ = extractDataRegion(bitMatrix);
+  if (!bitMatrix_) {
+      isValid_ = false;
+      return;
+  }
   readBitMatrix_ = new BitMatrix(bitMatrix_->getWidth(), bitMatrix_->getHeight());
 }
 
 Ref<Version> BitMatrixParser::readVersion(Ref<BitMatrix> bitMatrix) {
-  if (parsedVersion_ != 0) {
+  if (parsedVersion_.empty() || parsedVersion_ != 0) {
     return parsedVersion_;
   }
 
@@ -51,13 +62,17 @@ Ref<Version> BitMatrixParser::readVersion(Ref<BitMatrix> bitMatrix) {
   int numColumns = bitMatrix->getWidth();
 
   Ref<Version> version = parsedVersion_->getVersionForDimensions(numRows, numColumns);
-  if (version != 0) {
+  if (!version.empty() && version != 0) {
     return version;
   }
-  throw ReaderException("Couldn't decode version");
+  return Ref<Version>();
+//  throw ReaderException("Couldn't decode version");
 }
 
 ArrayRef<char> BitMatrixParser::readCodewords() {
+    if (parsedVersion_.empty()) {
+        return {};
+    }
     ArrayRef<char> result(parsedVersion_->getTotalCodewords());
     int resultOffset = 0;
     int row = 4;
@@ -120,7 +135,8 @@ ArrayRef<char> BitMatrixParser::readCodewords() {
     } while ((row < numRows) || (column < numColumns));
 
     if (resultOffset != parsedVersion_->getTotalCodewords()) {
-      throw ReaderException("Did not read all codewords");
+//      throw ReaderException("Did not read all codewords");
+        return {};
     }
     return result;
 }
@@ -324,7 +340,8 @@ Ref<BitMatrix> BitMatrixParser::extractDataRegion(Ref<BitMatrix> bitMatrix) {
     int symbolSizeColumns = parsedVersion_->getSymbolSizeColumns();
 
     if ((int)bitMatrix->getHeight() != symbolSizeRows) {
-      throw IllegalArgumentException("Dimension of bitMatrix must match the version size");
+        return Ref<BitMatrix>();
+//      throw IllegalArgumentException("Dimension of bitMatrix must match the version size");
     }
 
     int dataRegionSizeRows = parsedVersion_->getDataRegionSizeRows();

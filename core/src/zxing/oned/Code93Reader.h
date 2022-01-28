@@ -44,10 +44,10 @@ private:
   Range findAsteriskPattern(Ref<BitArray> row);
 
   static int toPattern(std::vector<int>& counters);
-  static char patternToChar(int pattern);
+  static bool patternToChar(int pattern, char* out);
   static Ref<String> decodeExtended(std::string const& encoded);
-  static void checkChecksums(std::string const& result);
-  static void checkOneChecksum(std::string const& result,
+  static bool checkChecksums(std::string const& result);
+  static bool checkOneChecksum(std::string const& result,
                                int checkPosition,
                                int weightMax);
 };

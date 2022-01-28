@@ -44,7 +44,7 @@ private:
   static std::vector<int> findAsteriskPattern(Ref<BitArray> row,
                                               std::vector<int>& counters);
   static int toNarrowWidePattern(std::vector<int>& counters);
-  static char patternToChar(int pattern);
+  static bool patternToChar(int pattern, char* out);
   static Ref<String> decodeExtended(std::string encoded);
 			
   void append(char* s, char c);

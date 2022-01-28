@@ -127,7 +127,17 @@ Ref<Result> UPCEANReader::decodeRow(int rowNumber,
                                     Range const& startGuardRange) {
   string& result = decodeRowStringBuffer;
   result.clear();
+
+  if (!startGuardRange.isValid()) {
+      return Ref<Result>();
+  }
+
   int endStart = decodeMiddle(row, startGuardRange, result);
+
+    // check decodeMiddle success
+    if (endStart < 0) {
+        return Ref<Result>();
+    }
 
   Range endRange = decodeEnd(row, endStart);
 
@@ -137,17 +147,17 @@ Ref<Result> UPCEANReader::decodeRow(int rowNumber,
   int end = endRange[1];
   int quietEnd = end + (end - endRange[0]);
   if (quietEnd >= row->getSize() || !row->isRange(end, quietEnd, false)) {
-    throw NotFoundException();
+      return Ref<Result>();
   }
 
   // UPC/EAN should never be less than 8 chars anyway
   if (result.length() < 8) {
-    throw FormatException();
+    return Ref<Result>();
   }
 
   Ref<String> resultString (new String(result));
   if (!checkChecksum(resultString)) {
-    throw ChecksumException();
+      return Ref<Result>();
   }
   
   float left = (float) (startGuardRange[1] + startGuardRange[0]) / 2.0f;
@@ -163,7 +173,6 @@ Ref<Result> UPCEANReader::decodeRow(int rowNumber,
 
 UPCEANReader::Range UPCEANReader::findStartGuardPattern(Ref<BitArray> row) {
   bool foundStart = false;
-  Range startRange;
   int nextStart = 0;
   vector<int> counters(START_END_PATTERN.size(), 0);
   // std::cerr << "fsgp " << *row << std::endl;
@@ -171,7 +180,7 @@ UPCEANReader::Range UPCEANReader::findStartGuardPattern(Ref<BitArray> row) {
     for(int i=0; i < (int)START_END_PATTERN.size(); ++i) {
       counters[i] = 0;
     }
-    startRange = findGuardPattern(row, nextStart, false, START_END_PATTERN, counters);
+      Range startRange = findGuardPattern(row, nextStart, false, START_END_PATTERN, counters);
     // std::cerr << "sr " << startRange[0] << " " << startRange[1] << std::endl;
     int start = startRange[0];
     nextStart = startRange[1];
@@ -181,9 +190,12 @@ UPCEANReader::Range UPCEANReader::findStartGuardPattern(Ref<BitArray> row) {
     int quietStart = start - (nextStart - start);
     if (quietStart >= 0) {
       foundStart = row->isRange(quietStart, start, false);
+      if (foundStart) {
+          return startRange;
+      }
     }
   }
-  return startRange;
+  return {};
 }
 
 UPCEANReader::Range UPCEANReader::findGuardPattern(Ref<BitArray> row,
@@ -235,7 +247,7 @@ UPCEANReader::Range UPCEANReader::findGuardPattern(Ref<BitArray> row,
       isWhite = !isWhite;
     }
   }
-  throw NotFoundException();
+  return {};
 }
 
 UPCEANReader::Range UPCEANReader::decodeEnd(Ref<BitArray> row, int endStart) {
@@ -246,7 +258,11 @@ int UPCEANReader::decodeDigit(Ref<BitArray> row,
                               vector<int> & counters,
                               int rowOffset,
                               vector<int const*> const& patterns) {
-  recordPattern(row, rowOffset, counters);
+
+    if (!recordPattern(row, rowOffset, counters)) {
+        return -1;
+    }
+
   float bestVariance = MAX_AVG_VARIANCE; // worst variance we'll accept
   int bestMatch = -1;
   int max = patterns.size();
@@ -261,7 +277,7 @@ int UPCEANReader::decodeDigit(Ref<BitArray> row,
   if (bestMatch >= 0) {
     return bestMatch;
   } else {
-    throw NotFoundException();
+    return -1;
   }
 }
 

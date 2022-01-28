@@ -37,33 +37,48 @@ using zxing::BitMatrix;
 
 Decoder::Decoder() : rsDecoder_(GenericGF::DATA_MATRIX_FIELD_256) {}
 
-void Decoder::correctErrors(ArrayRef<char> codewordBytes, int numDataCodewords) {
+bool Decoder::correctErrors(ArrayRef<char> codewordBytes, int numDataCodewords) {
   int numCodewords = codewordBytes->size();
   ArrayRef<int> codewordInts(numCodewords);
   for (int i = 0; i < numCodewords; i++) {
     codewordInts[i] = codewordBytes[i] & 0xff;
   }
   int numECCodewords = numCodewords - numDataCodewords;
-  try {
-    rsDecoder_.decode(codewordInts, numECCodewords);
-  } catch (ReedSolomonException const& ignored) {
-    (void)ignored;
-    throw ChecksumException();
+
+  if (!rsDecoder_.decode(codewordInts, numECCodewords)) {
+      return false;
   }
+
+//  try {
+//    rsDecoder_.decode(codewordInts, numECCodewords);
+//  } catch (ReedSolomonException const& ignored) {
+//    (void)ignored;
+//    throw ChecksumException();
+//  }
   // Copy back into array of bytes -- only need to worry about the bytes that were data
   // We don't care about errors in the error-correction codewords
   for (int i = 0; i < numDataCodewords; i++) {
     codewordBytes[i] = (char)codewordInts[i];
   }
+  return true;
 }
 
 Ref<DecoderResult> Decoder::decode(Ref<BitMatrix> bits) {
   // Construct a parser and read version, error-correction level
   BitMatrixParser parser(bits);
-  Version *version = parser.readVersion(bits);
+  if (!parser.isValid()) {
+      return Ref<DecoderResult>();
+  }
+  Ref<Version> version = parser.readVersion(bits);
+  if (version.empty()) {
+      return Ref<DecoderResult>();
+  }
 
   // Read codewords
   ArrayRef<char> codewords(parser.readCodewords());
+  if (!codewords) {
+      return Ref<DecoderResult>();
+  }
   // Separate into data blocks
   std::vector<Ref<DataBlock> > dataBlocks = DataBlock::getDataBlocks(codewords, version);
 
@@ -81,7 +96,9 @@ Ref<DecoderResult> Decoder::decode(Ref<BitMatrix> bits) {
     Ref<DataBlock> dataBlock(dataBlocks[j]);
     ArrayRef<char> codewordBytes = dataBlock->getCodewords();
     int numDataCodewords = dataBlock->getNumDataCodewords();
-    correctErrors(codewordBytes, numDataCodewords);
+    if (!correctErrors(codewordBytes, numDataCodewords)) {
+        return Ref<DecoderResult>();
+    }
     for (int i = 0; i < numDataCodewords; i++) {
       // De-interlace data blocks.
       resultBytes[i * dataBlocksCount + j] = codewordBytes[i];

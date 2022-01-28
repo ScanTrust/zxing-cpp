@@ -81,15 +81,20 @@ Ref<Result> CodaBarReader::decodeRow(int rowNumber, Ref<BitArray> row) {
     counters.resize(0);
     counters.resize(size); }
 
-  setCounters(row);
+  if (!setCounters(row)) {
+      return Ref<Result>();
+  }
   int startOffset = findStartPattern();
+  if (startOffset < 0) {
+      return Ref<Result>();
+  }
   int nextStart = startOffset;
 
   decodeRowResult.clear();
   do {
     int charOffset = toNarrowWidePattern(nextStart);
     if (charOffset == -1) {
-      throw NotFoundException();
+      return Ref<Result>();
     }
     // Hack: We store the position in the alphabet table into a
     // StringBuilder, so that we can access the decoded patterns in
@@ -114,10 +119,12 @@ Ref<Result> CodaBarReader::decodeRow(int rowNumber, Ref<BitArray> row) {
   // otherwise this is probably a false positive. The exception is if we are
   // at the end of the row. (I.e. the barcode barely fits.)
   if (nextStart < counterLength && trailingWhitespace < lastPatternSize / 2) {
-    throw NotFoundException();
+      return Ref<Result>();
   }
 
-  validatePattern(startOffset);
+  if(!validatePattern(startOffset)) {
+      return Ref<Result>();
+  }
 
   // Translate character table offsets to actual characters.
   for (int i = 0; i < (int)decodeRowResult.length(); i++) {
@@ -126,17 +133,17 @@ Ref<Result> CodaBarReader::decodeRow(int rowNumber, Ref<BitArray> row) {
   // Ensure a valid start and end character
   char startchar = decodeRowResult[0];
   if (!arrayContains(STARTEND_ENCODING, startchar)) {
-    throw NotFoundException();
+      return Ref<Result>();
   }
   char endchar = decodeRowResult[decodeRowResult.length() - 1];
   if (!arrayContains(STARTEND_ENCODING, endchar)) {
-    throw NotFoundException();
+      return Ref<Result>();
   }
 
   // remove stop/start characters character and check if a long enough string is contained
   if ((int)decodeRowResult.length() <= MIN_CHARACTER_LENGTH) {
     // Almost surely a false positive ( start + stop + at least 1 character)
-    throw NotFoundException();
+      return Ref<Result>();
   }
 
   decodeRowResult.erase(decodeRowResult.length() - 1, 1);
@@ -164,7 +171,7 @@ Ref<Result> CodaBarReader::decodeRow(int rowNumber, Ref<BitArray> row) {
                                 BarcodeFormat::CODABAR));
 }
 
-void CodaBarReader::validatePattern(int start)  {
+bool CodaBarReader::validatePattern(int start)  {
   // First, sum up the total size of our four categories of stripe sizes;
   vector<int> sizes (4, 0);
   vector<int> counts (4, 0);
@@ -214,7 +221,7 @@ void CodaBarReader::validatePattern(int start)  {
       int category = (j & 1) + (pattern & 1) * 2;
       int size = counters[pos + j];
       if (size < mins[category] || size > maxes[category]) {
-        throw NotFoundException();
+        return false;
       }
       pattern >>= 1;
     }
@@ -223,6 +230,8 @@ void CodaBarReader::validatePattern(int start)  {
     }
     pos += 8;
   }
+
+  return true;
 }
 
 /**
@@ -231,13 +240,13 @@ void CodaBarReader::validatePattern(int start)  {
  * uses our builtin "counters" member for storage.
  * @param row row to count from
  */
-void CodaBarReader::setCounters(Ref<BitArray> row)  {
+bool CodaBarReader::setCounters(Ref<BitArray> row)  {
   counterLength = 0;
   // Start from the first white bit.
   int i = row->getNextUnset(0);
   int end = row->getSize();
   if (i >= end) {
-    throw NotFoundException();
+    return false;
   }
   bool isWhite = true;
   int count = 0;
@@ -251,6 +260,7 @@ void CodaBarReader::setCounters(Ref<BitArray> row)  {
     }
   }
   counterAppend(count);
+  return true;
 }
 
 void CodaBarReader::counterAppend(int e) {
@@ -277,7 +287,7 @@ int CodaBarReader::findStartPattern() {
       }
     }
   }
-  throw NotFoundException();
+  return -1;
 }
 
 bool CodaBarReader::arrayContains(char const array[], char key) {

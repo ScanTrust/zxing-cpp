@@ -110,7 +110,8 @@ Ref<DecoderResult> DecodedBitStreamParser::decode(ArrayRef<int> codewords)
     if (codeIndex < codewords->size()) {
       code = codewords[codeIndex++];
     } else {
-      throw FormatException();
+        return Ref<DecoderResult>();
+//      throw FormatException();
     }
   }
   return Ref<DecoderResult>(new DecoderResult(ArrayRef<char>(), result));

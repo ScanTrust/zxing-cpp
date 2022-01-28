@@ -110,13 +110,11 @@ void MultiFormatReader::setHints(DecodeHints hints) {
 }
 
 Ref<Result> MultiFormatReader::decodeInternal(Ref<BinaryBitmap> image) {
-  for (unsigned int i = 0; i < readers_.size(); i++) {
-    try {
-      return readers_[i]->decode(image, hints_);
-    } catch (ReaderException const& re) {
-      (void)re;
-      // continue
-    }
+  for (auto & reader : readers_) {
+      Ref<Result> res = reader->decode(image, hints_);
+      if (res) {
+          return res;
+      }
   }
   return Ref<Result>();
 }

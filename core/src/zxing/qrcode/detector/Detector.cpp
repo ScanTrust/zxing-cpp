@@ -83,7 +83,14 @@ Ref<DetectorResult> Detector::processFinderPatternInfo(Ref<FinderPatternInfo> in
     return Ref<DetectorResult>();
   }
   int dimension = computeDimension(topLeft, topRight, bottomLeft, moduleSize);
+  if (dimension < 0) {
+      return Ref<DetectorResult>();
+  }
   Version *provisionalVersion = Version::getProvisionalVersionForDimension(dimension);
+  if (!provisionalVersion) {
+      return Ref<DetectorResult>();
+  }
+
   int modulesBetweenFPCenters = provisionalVersion->getDimensionForVersion() - 7;
 
   Ref<AlignmentPattern> alignmentPattern;
@@ -105,13 +112,17 @@ Ref<DetectorResult> Detector::processFinderPatternInfo(Ref<FinderPatternInfo> in
 
     // Kind of arbitrary -- expand search radius before giving up
     for (int i = 4; i <= 16; i <<= 1) {
-      try {
         alignmentPattern = findAlignmentInRegion(moduleSize, estAlignmentX, estAlignmentY, (float)i);
-        break;
-      } catch (zxing::ReaderException const& re) {
-        (void)re;
-        // try next round
-      }
+        if (alignmentPattern) {
+            break;
+        }
+//      try {
+//        alignmentPattern = findAlignmentInRegion(moduleSize, estAlignmentX, estAlignmentY, (float)i);
+//        break;
+//      } catch (zxing::ReaderException const& re) {
+//        (void)re;
+//        // try next round
+//      }
     }
     if (alignmentPattern == 0) {
       // Try anyway
@@ -186,9 +197,10 @@ int Detector::computeDimension(Ref<ResultPoint> topLeft, Ref<ResultPoint> topRig
     dimension--;
     break;
   case 3:
-    ostringstream s;
-    s << "Bad dimension: " << dimension;
-    throw zxing::ReaderException(s.str().c_str());
+      return -1;
+//    ostringstream s;
+//    s << "Bad dimension: " << dimension;
+//    throw zxing::ReaderException(s.str().c_str());
   }
   return dimension;
 }
@@ -308,12 +320,14 @@ Ref<AlignmentPattern> Detector::findAlignmentInRegion(float overallEstModuleSize
   int alignmentAreaLeftX = max(0, estAlignmentX - allowance);
   int alignmentAreaRightX = min((int)(image_->getWidth() - 1), estAlignmentX + allowance);
   if (alignmentAreaRightX - alignmentAreaLeftX < overallEstModuleSize * 3) {
-    throw zxing::ReaderException("region too small to hold alignment pattern");
+      return Ref<AlignmentPattern>();
+//    throw zxing::ReaderException("region too small to hold alignment pattern");
   }
   int alignmentAreaTopY = max(0, estAlignmentY - allowance);
   int alignmentAreaBottomY = min((int)(image_->getHeight() - 1), estAlignmentY + allowance);
   if (alignmentAreaBottomY - alignmentAreaTopY < overallEstModuleSize * 3) {
-    throw zxing::ReaderException("region too small to hold alignment pattern");
+      return Ref<AlignmentPattern>();
+//    throw zxing::ReaderException("region too small to hold alignment pattern");
   }
 
   AlignmentPatternFinder alignmentFinder(image_, alignmentAreaLeftX, alignmentAreaTopY, alignmentAreaRightX

@@ -79,7 +79,8 @@ std::vector<Ref<DataBlock> > DataBlock::getDataBlocks(ArrayRef<char> rawCodeword
       break;
     }
     if (numCodewords != shorterBlocksTotalCodewords + 1) {
-      throw IllegalArgumentException("Data block sizes differ by more than 1");
+        return {};
+//      throw IllegalArgumentException("Data block sizes differ by more than 1");
     }
     longerBlocksStartAt--;
   }
@@ -108,7 +109,8 @@ std::vector<Ref<DataBlock> > DataBlock::getDataBlocks(ArrayRef<char> rawCodeword
   }
 
   if (rawCodewordsOffset != rawCodewords->size()) {
-    throw IllegalArgumentException("rawCodewordsOffset != rawCodewords.length");
+      return {};
+//    throw IllegalArgumentException("rawCodewordsOffset != rawCodewords.length");
   }
 
   return result;

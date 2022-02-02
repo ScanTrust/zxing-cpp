@@ -35,6 +35,7 @@ private:
   Ref<BitMatrix> bitMatrix_;
   Version *parsedVersion_;
   Ref<FormatInformation> parsedFormatInfo_;
+  bool isValid_;
 
   int copyBit(size_t x, size_t y, int versionBits);
 
@@ -43,6 +44,8 @@ public:
   Ref<FormatInformation> readFormatInformation();
   Version *readVersion();
   ArrayRef<char> readCodewords();
+
+  bool isValid() const {return isValid_;};
 
 private:
   BitMatrixParser(const BitMatrixParser&);

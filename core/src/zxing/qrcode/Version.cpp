@@ -97,19 +97,15 @@ ECBlocks& Version::getECBlocksForLevel(ErrorCorrectionLevel &ecLevel) {
 
 Version *Version::getProvisionalVersionForDimension(int dimension) {
   if (dimension % 4 != 1) {
-    throw FormatException();
+    return nullptr;
   }
-  try {
-    return Version::getVersionForNumber((dimension - 17) >> 2);
-  } catch (IllegalArgumentException const& ignored) {
-    (void)ignored;
-    throw FormatException();
-  }
+  return Version::getVersionForNumber((dimension - 17) >> 2);
 }
 
 Version *Version::getVersionForNumber(int versionNumber) {
   if (versionNumber < 1 || versionNumber > N_VERSIONS) {
-    throw ReaderException("versionNumber must be between 1 and 40");
+//    throw ReaderException("versionNumber must be between 1 and 40");
+    return nullptr;
   }
 
   return VERSIONS[versionNumber - 1];
@@ -168,6 +164,9 @@ Version *Version::decodeVersionInformation(unsigned int versionBits) {
 
 Ref<BitMatrix> Version::buildFunctionPattern() {
   int dimension = getDimensionForVersion();
+  if (dimension < 1) {
+      return Ref<BitMatrix>();
+  }
   Ref<BitMatrix> functionPattern(new BitMatrix(dimension));
 
 

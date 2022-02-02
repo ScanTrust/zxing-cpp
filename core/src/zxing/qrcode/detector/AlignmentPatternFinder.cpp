@@ -203,6 +203,6 @@ Ref<AlignmentPattern> AlignmentPatternFinder::find() {
     Ref<AlignmentPattern> center((*possibleCenters_)[0]);
     return center;
   }
-
-  throw zxing::ReaderException("Could not find alignment pattern");
+    return Ref<AlignmentPattern>();
+//  throw zxing::ReaderException("Could not find alignment pattern");
 }

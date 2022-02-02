@@ -37,9 +37,9 @@ vector<Ref<DataMask> > DataMask::DATA_MASKS;
 static int N_DATA_MASKS = DataMask::buildDataMasks();
 
 DataMask &DataMask::forReference(int reference) {
-  if (reference < 0 || reference > 7) {
-    throw IllegalArgumentException("reference must be between 0 and 7");
-  }
+//  if (reference < 0 || reference > 7) {
+//    throw IllegalArgumentException("reference must be between 0 and 7");
+//  }
   return *DATA_MASKS[reference];
 }
 

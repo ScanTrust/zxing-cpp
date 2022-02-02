@@ -30,14 +30,19 @@ int BitMatrixParser::copyBit(size_t x, size_t y, int versionBits) {
 }
 
 BitMatrixParser::BitMatrixParser(Ref<BitMatrix> bitMatrix) :
-    bitMatrix_(bitMatrix), parsedVersion_(0), parsedFormatInfo_() {
+    bitMatrix_(bitMatrix), parsedVersion_(0), parsedFormatInfo_(), isValid_(true) {
   size_t dimension = bitMatrix->getHeight();
+  assert((dimension >= 21) && (dimension & 0x03) == 1);
   if ((dimension < 21) || (dimension & 0x03) != 1) {
-    throw ReaderException("Dimension must be 1 mod 4 and >= 21");
+      isValid_ = false;
+//    throw ReaderException("Dimension must be 1 mod 4 and >= 21");
   }
 }
 
 Ref<FormatInformation> BitMatrixParser::readFormatInformation() {
+  if (!isValid_) {
+    return Ref<FormatInformation>();
+  }
   if (parsedFormatInfo_ != 0) {
     return parsedFormatInfo_;
   }
@@ -71,10 +76,14 @@ Ref<FormatInformation> BitMatrixParser::readFormatInformation() {
   if (parsedFormatInfo_ != 0) {
     return parsedFormatInfo_;
   }
-  throw ReaderException("Could not decode format information");
+  return Ref<FormatInformation>();
+//  throw ReaderException("Could not decode format information");
 }
 
 Version *BitMatrixParser::readVersion() {
+  if (!isValid_) {
+    return nullptr;
+  }
   if (parsedVersion_ != 0) {
     return parsedVersion_;
   }
@@ -113,12 +122,23 @@ Version *BitMatrixParser::readVersion() {
   if (parsedVersion_ != 0 && parsedVersion_->getDimensionForVersion() == dimension) {
     return parsedVersion_;
   }
-  throw ReaderException("Could not decode version");
+  return nullptr;
+//  throw ReaderException("Could not decode version");
 }
 
 ArrayRef<char> BitMatrixParser::readCodewords() {
+  if (!isValid_) {
+    return {};
+  }
   Ref<FormatInformation> formatInfo = readFormatInformation();
+  if (!formatInfo) {
+      return {};
+  }
+
   Version *version = readVersion();
+  if (!version) {
+      return {};
+  }
 
 
   // Get the data mask for the format used in this QR Code. This will exclude
@@ -133,6 +153,9 @@ ArrayRef<char> BitMatrixParser::readCodewords() {
   //	cerr << version->getTotalCodewords() << endl;
 
   Ref<BitMatrix> functionPattern = version->buildFunctionPattern();
+  if(!functionPattern) {
+      return {};
+  }
 
 
   //	cout << *functionPattern << endl;
@@ -174,7 +197,8 @@ ArrayRef<char> BitMatrixParser::readCodewords() {
   }
 
   if (resultOffset != version->getTotalCodewords()) {
-    throw ReaderException("Did not read all codewords");
+      return {};
+//    throw ReaderException("Did not read all codewords");
   }
   return result;
 }

@@ -31,9 +31,9 @@ using zxing::ArrayRef;
 using zxing::Ref;
 
 void BitMatrix::init(int width, int height) {
-  if (width < 1 || height < 1) {
-    throw IllegalArgumentException("Both dimensions must be greater than 0");
-  }
+//  if (width < 1 || height < 1) {
+//    throw IllegalArgumentException("Both dimensions must be greater than 0");
+//  }
   this->width = width;
   this->height = height;
   this->rowSize = (width + bitsPerWord - 1) >> logBits;
@@ -56,17 +56,21 @@ void BitMatrix::flip(int x, int y) {
 }
 
 void BitMatrix::setRegion(int left, int top, int width, int height) {
-  if (top < 0 || left < 0) {
-    throw IllegalArgumentException("Left and top must be nonnegative");
-  }
-  if (height < 1 || width < 1) {
-    throw IllegalArgumentException("Height and width must be at least 1");
-  }
+    assert(top >= 0 && left >= 0);
+//  if (top < 0 || left < 0) {
+//    throw IllegalArgumentException("Left and top must be nonnegative");
+//  }
+    assert(height > 0 && width > 0);
+//  if (height < 1 || width < 1) {
+//    throw IllegalArgumentException("Height and width must be at least 1");
+//  }
   int right = left + width;
   int bottom = top + height;
-  if (bottom > this->height || right > this->width) {
-    throw IllegalArgumentException("The region must fit inside the matrix");
-  }
+
+  assert(bottom <= this->height && right <= this->width);
+//  if (bottom > this->height || right > this->width) {
+//    throw IllegalArgumentException("The region must fit inside the matrix");
+//  }
   for (int y = top; y < bottom; y++) {
     int offset = y * rowSize;
     for (int x = left; x < right; x++) {

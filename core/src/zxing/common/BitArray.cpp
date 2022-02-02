@@ -50,7 +50,8 @@ void BitArray::clear() {
 
 bool BitArray::isRange(int start, int end, bool value) {
   if (end < start) {
-    throw IllegalArgumentException();
+    return false;
+      //    throw IllegalArgumentException();
   }
   if (end == start) {
     return true; // empty range matches

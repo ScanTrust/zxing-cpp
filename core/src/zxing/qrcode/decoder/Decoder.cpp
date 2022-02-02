@@ -69,21 +69,24 @@ bool Decoder::correctErrors(ArrayRef<char> codewordBytes, int numDataCodewords) 
 Ref<DecoderResult> Decoder::decode(Ref<BitMatrix> bits) {
   // Construct a parser and read version, error-correction level
   BitMatrixParser parser(bits);
-
-  // std::cerr << *bits << std::endl;
+  if (!parser.isValid()) {
+      return Ref<DecoderResult>();
+  }
 
   Version *version = parser.readVersion();
   ErrorCorrectionLevel &ecLevel = parser.readFormatInformation()->getErrorCorrectionLevel();
 
-
   // Read codewords
   ArrayRef<char> codewords(parser.readCodewords());
-
+  if(codewords->empty()) {
+      return Ref<DecoderResult>();
+  }
 
   // Separate into data blocks
   std::vector<Ref<DataBlock> > dataBlocks(DataBlock::getDataBlocks(codewords, version, ecLevel));
-
-
+  if (dataBlocks.empty()) {
+      return Ref<DecoderResult>();
+  }
   // Count total number of data bytes
   int totalBytes = 0;
   for (size_t i = 0; i < dataBlocks.size(); i++) {

@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 
-#include <zxing/common/BitMatrix.h>
-#include <zxing/common/IllegalArgumentException.h>
+#include "assert.h"
 
-#include <iostream>
-#include <sstream>
+#include <zxing/common/BitMatrix.h>
 #include <string>
 
 using std::ostream;

@@ -13,7 +13,7 @@ option(BUILD_RUNNABLE "Enable generation of runnable targets" OFF)
 set(CMAKE_LIBRARY_PATH /opt/local/lib ${CMAKE_LIBRARY_PATH})
 
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fno-exceptions")
+#set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fno-exceptions")
 
 # Check for polluted source tree.
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/CMakeCache.txt OR

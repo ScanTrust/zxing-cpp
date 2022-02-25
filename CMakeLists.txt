@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.0)
 
+if(NOT CMAKE_DEBUG_POSTFIX)
+    set(CMAKE_DEBUG_POSTFIX d)
+endif()
+
 project(zxing)
 
 option(BUILD_TESTING "Enable generation of test targets" OFF)

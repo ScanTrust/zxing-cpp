@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-if(NOT CMAKE_DEBUG_POSTFIX)
+if(NOT DEFINED CMAKE_DEBUG_POSTFIX)
     set(CMAKE_DEBUG_POSTFIX d)
 endif()
 

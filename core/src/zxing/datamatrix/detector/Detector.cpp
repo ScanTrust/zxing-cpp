@@ -81,12 +81,17 @@ Ref<BitMatrix> Detector::getImage() {
 }
 
 Ref<DetectorResult> Detector::detect() {
-  Ref<WhiteRectangleDetector> rectangleDetector_(new WhiteRectangleDetector(image_));
-  std::vector<Ref<ResultPoint> > ResultPoints = rectangleDetector_->detect();
-  Ref<ResultPoint> pointA = ResultPoints[0];
-  Ref<ResultPoint> pointB = ResultPoints[1];
-  Ref<ResultPoint> pointC = ResultPoints[2];
-  Ref<ResultPoint> pointD = ResultPoints[3];
+    Ref<WhiteRectangleDetector> rectangleDetector_(new WhiteRectangleDetector(image_));
+    std::vector<Ref<ResultPoint> > resultPoints = rectangleDetector_->detect();
+
+    if(resultPoints.empty()) {
+        return Ref<DetectorResult>();
+    }
+
+    Ref<ResultPoint> pointA = resultPoints[0];
+    Ref<ResultPoint> pointB = resultPoints[1];
+    Ref<ResultPoint> pointC = resultPoints[2];
+    Ref<ResultPoint> pointD = resultPoints[3];
 
   // Point A and D are across the diagonal from one another,
   // as are B and C. Figure out which are the solid black lines

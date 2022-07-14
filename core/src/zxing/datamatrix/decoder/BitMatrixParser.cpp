@@ -45,6 +45,11 @@ BitMatrixParser::BitMatrixParser(Ref<BitMatrix> bitMatrix) : bitMatrix_(NULL),
   }
 
   parsedVersion_ = readVersion(bitMatrix);
+  if (!parsedVersion_) {
+      isValid_ = false;
+      return;
+  }
+
   bitMatrix_ = extractDataRegion(bitMatrix);
   if (!bitMatrix_) {
       isValid_ = false;

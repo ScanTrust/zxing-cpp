@@ -69,8 +69,16 @@ endif()
 
 include_directories(core/src)
 add_library(libzxing STATIC ${LIBZXING_FILES})
+
+# Alias to make its source tree conform with its install tree
 add_library(zxing::libzxing ALIAS libzxing)
 set_target_properties(libzxing PROPERTIES OUTPUT_NAME zxing)
+
+# add include directories
+target_include_directories(libzxing
+        PUBLIC
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/core/src>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/core/src>")
 
 if (EMSCRIPTEN)
     message(STATUS "Setting EMSCRIPTEN flags")

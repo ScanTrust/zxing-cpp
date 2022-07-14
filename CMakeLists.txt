@@ -6,6 +6,9 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 project(zxing)
+# Needed to set the namespace for both the export targets and the
+# alias libraries
+set(cmake_package_name zxing CACHE INTERNAL "")
 
 option(BUILD_TESTING "Enable generation of test targets" OFF)
 option(BUILD_RUNNABLE "Enable generation of runnable targets" OFF)

@@ -59,14 +59,14 @@ BitMatrixParser::BitMatrixParser(Ref<BitMatrix> bitMatrix) : bitMatrix_(NULL),
 }
 
 Ref<Version> BitMatrixParser::readVersion(Ref<BitMatrix> bitMatrix) {
-  if (parsedVersion_.empty() || parsedVersion_ != 0) {
+  if (!parsedVersion_.empty() && parsedVersion_ != 0) {
     return parsedVersion_;
   }
 
   int numRows = bitMatrix->getHeight();
   int numColumns = bitMatrix->getWidth();
 
-  Ref<Version> version = parsedVersion_->getVersionForDimensions(numRows, numColumns);
+  Ref<Version> version = Version::getVersionForDimensions(numRows, numColumns);
   if (!version.empty() && version != 0) {
     return version;
   }

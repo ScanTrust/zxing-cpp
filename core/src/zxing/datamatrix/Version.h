@@ -75,7 +75,7 @@ public:
   int getTotalCodewords();
   ECBlocks* getECBlocks();
   static int  buildVersions();  
-  Ref<Version> getVersionForDimensions(int numRows, int numColumns);
+  static Ref<Version> getVersionForDimensions(int numRows, int numColumns);
   
 private:
   Version(const Version&);

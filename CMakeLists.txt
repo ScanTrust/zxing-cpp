@@ -81,9 +81,9 @@ set_property(TARGET PROPERTY PUBLIC_HEADERS LIBZXING_HEADERS)
 message(STATUS "LIBZXING_HEADERS ${LIBZXING_HEADERS}")
 
 target_include_directories(libzxing
-        PUBLIC
+        INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/core/src>"
-#        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/core/src>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/core/src>"
         )
 
 if (EMSCRIPTEN)
@@ -181,11 +181,11 @@ install(TARGETS ${targets} EXPORT zxing-targets
 
 install(EXPORT zxing-targets DESTINATION lib/zxing/cmake NAMESPACE zxing::)
 
-install(
-        DIRECTORY core/src/zxing/
-        DESTINATION include/zxing
-        FILES_MATCHING PATTERN "*.h"
-)
+#install(
+#        DIRECTORY core/src/zxing/
+#        DESTINATION include/zxing
+#        FILES_MATCHING PATTERN "*.h"
+#)
 
 configure_file(cmake/zxing-config.cmake.in zxing-config.cmake @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/zxing-config.cmake DESTINATION lib/zxing/cmake)

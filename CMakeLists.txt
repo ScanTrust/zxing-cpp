@@ -80,10 +80,11 @@ set_target_properties(libzxing PROPERTIES OUTPUT_NAME zxing)
 set_property(TARGET PROPERTY PUBLIC_HEADERS LIBZXING_HEADERS)
 message(STATUS "LIBZXING_HEADERS ${LIBZXING_HEADERS}")
 
-#target_include_directories(libzxing
-#        PUBLIC
-#        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/core/src>"
-#        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/core/src>")
+target_include_directories(libzxing
+        PUBLIC
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/core/src>"
+#        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/core/src>"
+        )
 
 if (EMSCRIPTEN)
     message(STATUS "Setting EMSCRIPTEN flags")

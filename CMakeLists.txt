@@ -66,6 +66,8 @@ if(OpenCV_FOUND)
     include_directories(opencv/src)
 endif()
 
+set(LIBZXING_HEADERS ${LIBZXING_FILES})
+list(FILTER LIBZXING_HEADERS INCLUDE REGEX "\\.(h|hh|hpp)$")
 
 include_directories(core/src)
 add_library(libzxing STATIC ${LIBZXING_FILES})
@@ -75,10 +77,13 @@ add_library(zxing::libzxing ALIAS libzxing)
 set_target_properties(libzxing PROPERTIES OUTPUT_NAME zxing)
 
 # add include directories
-target_include_directories(libzxing
-        PUBLIC
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/core/src>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/core/src>")
+set_property(TARGET PROPERTY PUBLIC_HEADERS LIBZXING_HEADERS)
+message(STATUS "LIBZXING_HEADERS ${LIBZXING_HEADERS}")
+
+#target_include_directories(libzxing
+#        PUBLIC
+#        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/core/src>"
+#        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/core/src>")
 
 if (EMSCRIPTEN)
     message(STATUS "Setting EMSCRIPTEN flags")

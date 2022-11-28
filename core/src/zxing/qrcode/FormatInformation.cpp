@@ -60,7 +60,7 @@ int FormatInformation::numBitsDiffering(int a, int b) {
 
 Ref<FormatInformation> FormatInformation::decodeFormatInformation(int maskedFormatInfo1, int maskedFormatInfo2) {
   Ref<FormatInformation> result(doDecodeFormatInformation(maskedFormatInfo1, maskedFormatInfo2));
-  if (result != 0) {
+  if (!result.empty()) {
     return result;
   }
   // Should return null, but, some QR codes apparently

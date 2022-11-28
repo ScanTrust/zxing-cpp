@@ -44,7 +44,7 @@ Ref<FormatInformation> BitMatrixParser::readFormatInformation() {
   if (!isValid_) {
     return Ref<FormatInformation>();
   }
-  if (parsedFormatInfo_ != 0) {
+  if (!parsedFormatInfo_.empty()) {
     return parsedFormatInfo_;
   }
 
@@ -74,7 +74,7 @@ Ref<FormatInformation> BitMatrixParser::readFormatInformation() {
   }
 
   parsedFormatInfo_ = FormatInformation::decodeFormatInformation(formatInfoBits1,formatInfoBits2);
-  if (parsedFormatInfo_ != 0) {
+  if (!parsedFormatInfo_.empty()) {
     return parsedFormatInfo_;
   }
   return Ref<FormatInformation>();
@@ -85,7 +85,7 @@ Version *BitMatrixParser::readVersion() {
   if (!isValid_) {
     return nullptr;
   }
-  if (parsedVersion_ != 0) {
+  if (parsedVersion_ != nullptr) {
     return parsedVersion_;
   }
 
@@ -106,7 +106,7 @@ Version *BitMatrixParser::readVersion() {
   }
 
   parsedVersion_ = Version::decodeVersionInformation(versionBits);
-  if (parsedVersion_ != 0 && parsedVersion_->getDimensionForVersion() == dimension) {
+  if (parsedVersion_ != nullptr && parsedVersion_->getDimensionForVersion() == dimension) {
     return parsedVersion_;
   }
 
@@ -120,7 +120,7 @@ Version *BitMatrixParser::readVersion() {
   }
 
   parsedVersion_ = Version::decodeVersionInformation(versionBits);
-  if (parsedVersion_ != 0 && parsedVersion_->getDimensionForVersion() == dimension) {
+  if (parsedVersion_ != nullptr && parsedVersion_->getDimensionForVersion() == dimension) {
     return parsedVersion_;
   }
   return nullptr;

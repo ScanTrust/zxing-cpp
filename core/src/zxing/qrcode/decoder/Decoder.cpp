@@ -74,7 +74,11 @@ Ref<DecoderResult> Decoder::decode(Ref<BitMatrix> bits) {
   }
 
   Version *version = parser.readVersion();
-  ErrorCorrectionLevel &ecLevel = parser.readFormatInformation()->getErrorCorrectionLevel();
+  auto formatInformation(parser.readFormatInformation());
+  if(formatInformation.empty()) {
+      return Ref<DecoderResult>();
+  }
+  ErrorCorrectionLevel &ecLevel = formatInformation->getErrorCorrectionLevel();
 
   // Read codewords
   ArrayRef<char> codewords(parser.readCodewords());

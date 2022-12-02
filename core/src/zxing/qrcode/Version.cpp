@@ -159,7 +159,7 @@ Version *Version::decodeVersionInformation(unsigned int versionBits) {
     return getVersionForNumber(bestVersion);
   }
   // If we didn't find a close enough match, fail
-  return 0;
+  return nullptr;
 }
 
 Ref<BitMatrix> Version::buildFunctionPattern() {

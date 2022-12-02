@@ -82,7 +82,7 @@ Ref<DecoderResult> Decoder::decode(Ref<BitMatrix> bits) {
 
   // Read codewords
   ArrayRef<char> codewords(parser.readCodewords());
-  if(codewords->empty()) {
+  if(!codewords || codewords->empty()) {
       return Ref<DecoderResult>();
   }
 

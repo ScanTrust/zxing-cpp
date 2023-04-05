@@ -18,27 +18,20 @@
 #include "Code39Reader.h"
 #include <zxing/oned/OneDResultPoint.h>
 #include <zxing/common/Array.h>
-#include <zxing/ReaderException.h>
-#include <zxing/NotFoundException.h>
-#include <zxing/ChecksumException.h>
-#include <math.h>
-#include <limits.h>
+#include <cmath>
+#include <limits>
 #include <algorithm>
 
 using std::vector;
 using zxing::Ref;
 using zxing::Result;
 using zxing::String;
-using zxing::NotFoundException;
-using zxing::ChecksumException;
 using zxing::oned::Code39Reader;
 
 // VC++
 using zxing::BitArray;
 
 namespace {
-  const char* ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. *$/+%";
-  // Note this lacks '*' compared to ALPHABET_STRING
   const char* CHECK_DIGIT_STRING = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%";
   
   /**

@@ -47,18 +47,20 @@ Ref<Result> OneDReader::decode(Ref<BinaryBitmap> image, DecodeHints hints) {
             // std::cerr << "v rotate" << std::endl;
             Ref<BinaryBitmap> rotatedImage(image->rotateCounterClockwise());
             // std::cerr << "^ rotate" << std::endl;
-            Ref<Result> result = doDecode(rotatedImage, hints);
-            if (!result.empty()) {
-                // Doesn't have java metadata stuff
-                ArrayRef <Ref<ResultPoint>> &points(result->getResultPoints());
-                if (points && !points->empty()) {
-                    int height = rotatedImage->getHeight();
-                    for (int i = 0; i < points->size(); i++) {
-                        points[i].reset(new OneDResultPoint(height - points[i]->getY() - 1, points[i]->getX()));
+            if(!rotatedImage.empty()) {
+                Ref<Result> result = doDecode(rotatedImage, hints);
+                if (!result.empty()) {
+                    // Doesn't have java metadata stuff
+                    ArrayRef <Ref<ResultPoint>> &points(result->getResultPoints());
+                    if (points && !points->empty()) {
+                        int height = rotatedImage->getHeight();
+                        for (int i = 0; i < points->size(); i++) {
+                            points[i].reset(new OneDResultPoint(height - points[i]->getY() - 1, points[i]->getX()));
+                        }
                     }
+                    // std::cerr << "tried harder" << std::endl;
+                    return result;
                 }
-                // std::cerr << "tried harder" << std::endl;
-                return result;
             }
         }
     }
@@ -68,6 +70,10 @@ Ref<Result> OneDReader::decode(Ref<BinaryBitmap> image, DecodeHints hints) {
 #include <typeinfo>
 
 Ref<Result> OneDReader::doDecode(Ref<BinaryBitmap> image, DecodeHints hints) {
+    if (image.empty()) {
+        return Ref<Result>();
+    }
+
   int width = image->getWidth();
   int height = image->getHeight();
   Ref<BitArray> row(new BitArray(width));

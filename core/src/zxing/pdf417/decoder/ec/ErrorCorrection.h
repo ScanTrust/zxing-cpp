@@ -52,7 +52,8 @@ class ErrorCorrection: public Counted {
   ErrorCorrection();
   void decode(ArrayRef<int> received,
               int numECCodewords,
-              ArrayRef<int> erasures);
+              ArrayRef<int> erasures,
+              bool& success);
 
  private:
   std::vector<Ref<ModulusPoly> > runEuclideanAlgorithm(Ref<ModulusPoly> a, Ref<ModulusPoly> b, int R);

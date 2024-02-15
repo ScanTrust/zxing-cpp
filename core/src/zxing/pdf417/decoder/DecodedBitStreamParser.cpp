@@ -555,7 +555,8 @@ Ref<String> DecodedBitStreamParser::decodeBase900toBase10(ArrayRef<int> codeword
   }
   string resultString = bigIntegerToString(result);
   if (resultString[0] != '1') {
-    throw FormatException("DecodedBitStreamParser::decodeBase900toBase10: String does not begin with 1");
+      return Ref<String>();
+//    throw FormatException("DecodedBitStreamParser::decodeBase900toBase10: String does not begin with 1");
   }
   string resultString2;
   resultString2.assign(resultString.begin()+1,resultString.end());

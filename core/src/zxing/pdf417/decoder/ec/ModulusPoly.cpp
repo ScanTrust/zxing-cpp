@@ -20,6 +20,8 @@
 #include <zxing/pdf417/decoder/ec/ModulusPoly.h>
 #include <zxing/pdf417/decoder/ec/ModulusGF.h>
 
+#include <cassert>
+
 using zxing::Ref;
 using zxing::ArrayRef;
 using zxing::pdf417::decoder::ec::ModulusGF;
@@ -33,9 +35,10 @@ using zxing::pdf417::decoder::ec::ModulusPoly;
 ModulusPoly::ModulusPoly(ModulusGF& field, ArrayRef<int> coefficients)
     : field_(field)
 {
-  if (coefficients->size() == 0) {
-    throw IllegalArgumentException("no coefficients!");
-  }
+    assert(!(!coefficients || coefficients->size() == 0) && "no coefficients!");
+//  if (!coefficients || coefficients->size() == 0) {
+////    throw IllegalArgumentException("no coefficients!");
+//  }
   int coefficientsLength = coefficients->size();
   if (coefficientsLength > 1 && coefficients[0] == 0) {
     // Leading term must be non-zero for anything except the constant polynomial "0"
@@ -118,9 +121,10 @@ int ModulusPoly::evaluateAt(int a) {
 }
 
 Ref<ModulusPoly> ModulusPoly::add(Ref<ModulusPoly> other) {
-  if (&field_ != &other->field_) {
-    throw IllegalArgumentException("ModulusPolys do not have same ModulusGF field");
-  }
+    assert((&field_ == &other->field_) && "ModulusPolys do not have same ModulusGF field");
+//  if (&field_ != &other->field_) {
+//    throw IllegalArgumentException("ModulusPolys do not have same ModulusGF field");
+//  }
   if (isZero()) {
     return other;
   }
@@ -150,9 +154,10 @@ Ref<ModulusPoly> ModulusPoly::add(Ref<ModulusPoly> other) {
 }
 
 Ref<ModulusPoly> ModulusPoly::subtract(Ref<ModulusPoly> other) {
-  if (&field_ != &other->field_) {
-    throw new IllegalArgumentException("ModulusPolys do not have same ModulusGF field");
-  }
+    assert((&field_ == &other->field_) && "ModulusPolys do not have same ModulusGF field");
+//  if (&field_ != &other->field_) {
+//    throw new IllegalArgumentException("ModulusPolys do not have same ModulusGF field");
+//  }
   if (other->isZero()) {
     return Ref<ModulusPoly>(this);
   }
@@ -160,9 +165,10 @@ Ref<ModulusPoly> ModulusPoly::subtract(Ref<ModulusPoly> other) {
 }
 
 Ref<ModulusPoly> ModulusPoly::multiply(Ref<ModulusPoly> other) {
-  if (&field_ != &other->field_) {
-    throw new IllegalArgumentException("ModulusPolys do not have same ModulusGF field");
-  }
+    assert((&field_ == &other->field_) && "ModulusPolys do not have same ModulusGF field");
+//  if (&field_ != &other->field_) {
+//    throw new IllegalArgumentException("ModulusPolys do not have same ModulusGF field");
+//  }
   if (isZero() || other->isZero()) {
     return field_.getZero();
   }
@@ -206,9 +212,10 @@ Ref<ModulusPoly> ModulusPoly::multiply(int scalar) {
 }
 
 Ref<ModulusPoly> ModulusPoly::multiplyByMonomial(int degree, int coefficient) {
-  if (degree < 0) {
-    throw new IllegalArgumentException("negative degree!");
-  }
+    assert((degree >= 0) && "negative degree!");
+//  if (degree < 0) {
+//    throw new IllegalArgumentException("negative degree!");
+//  }
   if (coefficient == 0) {
     return field_.getZero();
   }
@@ -221,12 +228,14 @@ Ref<ModulusPoly> ModulusPoly::multiplyByMonomial(int degree, int coefficient) {
 }
 
 std::vector<Ref<ModulusPoly> > ModulusPoly::divide(Ref<ModulusPoly> other) {
-  if (&field_ != &other->field_) {
-    throw new IllegalArgumentException("ModulusPolys do not have same ModulusGF field");
-  }
-  if (other->isZero()) {
-    throw new IllegalArgumentException("Divide by 0");
-  }
+    assert((&field_ == &other->field_) && "ModulusPolys do not have same ModulusGF field");
+//  if (&field_ != &other->field_) {
+//    throw new IllegalArgumentException("ModulusPolys do not have same ModulusGF field");
+//  }
+    assert(!other->isZero() && "Divide by 0");
+//  if (other->isZero()) {
+//    throw new IllegalArgumentException("Divide by 0");
+//  }
 
   Ref<ModulusPoly> quotient (field_.getZero());
   Ref<ModulusPoly> remainder (this);

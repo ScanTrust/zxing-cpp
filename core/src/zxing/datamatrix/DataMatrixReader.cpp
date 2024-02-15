@@ -34,6 +34,10 @@ DataMatrixReader::DataMatrixReader() :
 
 Ref<Result> DataMatrixReader::decode(Ref<BinaryBitmap> image, DecodeHints hints) {
   (void)hints;
+    if (image.empty()) {
+        return Ref<Result>();
+    }
+
     auto blackMatrix = image->getBlackMatrix();
     if (blackMatrix.empty()) {
         return Ref<Result>();

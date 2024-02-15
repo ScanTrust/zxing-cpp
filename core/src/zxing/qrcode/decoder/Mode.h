@@ -47,6 +47,7 @@ public:
   static Mode FNC1_FIRST_POSITION;
   static Mode FNC1_SECOND_POSITION;
   static Mode HANZI;
+  static Mode INVALID_MODE;
 
   static Mode& forBits(int bits);
   int getCharacterCountBits(Version *version);

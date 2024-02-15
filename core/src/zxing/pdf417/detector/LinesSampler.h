@@ -89,23 +89,29 @@ protected:
 
   static void codewordsToBitMatrix(std::vector<std::vector<int> > &codewords,
                                    Ref<BitMatrix> &matrix);
+
   static int calculateClusterNumber(int codeword);
   static Ref<BitMatrix> sampleGrid(Ref<BitMatrix> image,
                                    int dimension);
+
   static void computeSymbolWidths(std::vector<float>& symbolWidths,
-                                  const int symbolsPerLine, Ref<BitMatrix> linesMatrix);
+                                  const int symbolsPerLine,
+                                  Ref<BitMatrix> linesMatrix);
+
   static void linesMatrixToCodewords(std::vector<std::vector<int> > &clusterNumbers,
-                                     const int symbolsPerLine,
+                                     int symbolsPerLine,
                                      const std::vector<float> &symbolWidths,
                                      Ref<BitMatrix> linesMatrix,
-                                     std::vector<std::vector<int> > &codewords);
-  static std::vector<std::vector<std::map<int, int> > >
-      distributeVotes(const int symbolsPerLine,
-                      const std::vector<std::vector<int> >& codewords,
-                      const std::vector<std::vector<int> >& clusterNumbers);
-  static std::vector<int>
-      findMissingLines(const int symbolsPerLine,
-                       std::vector<std::vector<int> > &detectedCodeWords);
+                                     std::vector<std::vector<int> > &codewords,
+                                     bool &success);
+
+  static std::vector<std::vector<std::map<int, int> > > distributeVotes(int symbolsPerLine,
+                                                                        const std::vector<std::vector<int> >& codewords,
+                                                                        const std::vector<std::vector<int> >& clusterNumbers);
+
+  static std::vector<int> findMissingLines(const int symbolsPerLine,
+                                           std::vector<std::vector<int> > &detectedCodeWords);
+
   static int decodeRowCount(const int symbolsPerLine,
                             std::vector<std::vector<int> > &detectedCodeWords,
                             std::vector<int> &insertLinesAt);

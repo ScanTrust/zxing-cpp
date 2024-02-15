@@ -27,9 +27,10 @@ namespace zxing {
 
 int BitSource::readBits(int numBits) {
   if (numBits < 0 || numBits > 32 || numBits > available()) {
-    std::ostringstream oss;
-    oss << numBits;
-    throw IllegalArgumentException(oss.str().c_str());
+//    std::ostringstream oss;
+//    oss << numBits;
+//    throw IllegalArgumentException(oss.str().c_str());
+    return -1;
   }
 
   int result = 0;

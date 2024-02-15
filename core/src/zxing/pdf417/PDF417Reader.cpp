@@ -51,7 +51,7 @@ Ref<Result> PDF417Reader::decode(Ref<BinaryBitmap> image, DecodeHints hints) {
   if (!hints.isEmpty()) {
     Ref<ResultPointCallback> rpcb = hints.getResultPointCallback();
     /* .get(DecodeHintType.NEED_RESULT_POINT_CALLBACK); */
-    if (rpcb != NULL) {
+    if (!rpcb.empty()) {
       for (int i = 0; i < points->size(); i++) {
         rpcb->foundPossibleResultPoint(*points[i]);
       }
@@ -61,9 +61,6 @@ Ref<Result> PDF417Reader::decode(Ref<BinaryBitmap> image, DecodeHints hints) {
   if (detectorResult.empty()) {
       return Ref<Result>();
   }
-  /*
-    }
-  */
   Ref<Result> r(new Result(decoderResult->getText(), decoderResult->getRawBytes(), points,
                            BarcodeFormat::PDF_417));
   return r;

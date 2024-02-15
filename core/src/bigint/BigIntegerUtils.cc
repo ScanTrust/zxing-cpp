@@ -32,11 +32,12 @@ std::ostream &operator <<(std::ostream &os, const BigUnsigned &x) {
 		if (osFlags & os.showbase)
 			os << "0x";
 	} else if (osFlags & os.oct) {
-		base = 8;
-		if (osFlags & os.showbase)
-			os << '0';
-	} else
-		throw "std::ostream << BigUnsigned: Could not determine the desired base from output-stream flags";
+        base = 8;
+        if (osFlags & os.showbase)
+            os << '0';
+    }
+//	} else
+//		throw "std::ostream << BigUnsigned: Could not determine the desired base from output-stream flags";
 	std::string s = std::string(BigUnsignedInABase(x, base));
 	os << s;
 	return os;

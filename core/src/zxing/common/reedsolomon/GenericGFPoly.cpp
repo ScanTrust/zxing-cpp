@@ -22,7 +22,8 @@
 #include <iostream>
 #include <zxing/common/reedsolomon/GenericGFPoly.h>
 #include <zxing/common/reedsolomon/GenericGF.h>
-#include <zxing/common/IllegalArgumentException.h>
+
+#include <cassert>
 
 using zxing::GenericGFPoly;
 using zxing::ArrayRef;
@@ -34,9 +35,10 @@ using zxing::GenericGF;
 GenericGFPoly::GenericGFPoly(GenericGF &field,
                              ArrayRef<int> coefficients)
   :  field_(field) {
-  if (coefficients->size() == 0) {
-    throw IllegalArgumentException("need coefficients");
-  }
+    assert((coefficients->size() > 0) && "need coefficients");
+//  if (coefficients->size() == 0) {
+//    throw IllegalArgumentException("need coefficients");
+//  }
   int coefficientsLength = coefficients->size();
   if (coefficientsLength > 1 && coefficients[0] == 0) {
     // Leading term must be non-zero for anything except the constant polynomial "0"
@@ -96,9 +98,10 @@ int GenericGFPoly::evaluateAt(int a) {
 }
   
 Ref<GenericGFPoly> GenericGFPoly::addOrSubtract(Ref<zxing::GenericGFPoly> other) {
-  if (!(&field_ == &other->field_)) {
-    throw IllegalArgumentException("GenericGFPolys do not have same GenericGF field");
-  }
+    assert((&field_ == &other->field_) && "GenericGFPolys do not have same GenericGF field");
+//  if (!(&field_ == &other->field_)) {
+//    throw IllegalArgumentException("GenericGFPolys do not have same GenericGF field");
+//  }
   if (isZero()) {
     return other;
   }
@@ -130,9 +133,10 @@ Ref<GenericGFPoly> GenericGFPoly::addOrSubtract(Ref<zxing::GenericGFPoly> other)
 }
   
 Ref<GenericGFPoly> GenericGFPoly::multiply(Ref<zxing::GenericGFPoly> other) {
-  if (!(&field_ == &other->field_)) {
-    throw IllegalArgumentException("GenericGFPolys do not have same GenericGF field");
-  }
+    assert((&field_ == &other->field_) && "GenericGFPolys do not have same GenericGF field");
+//  if (!(&field_ == &other->field_)) {
+//    throw IllegalArgumentException("GenericGFPolys do not have same GenericGF field");
+//  }
     
   if (isZero() || other->isZero()) {
     return field_.getZero();
@@ -172,9 +176,10 @@ Ref<GenericGFPoly> GenericGFPoly::multiply(int scalar) {
 }
   
 Ref<GenericGFPoly> GenericGFPoly::multiplyByMonomial(int degree, int coefficient) {
-  if (degree < 0) {
-    throw IllegalArgumentException("degree must not be less then 0");
-  }
+    assert((degree >= 0) && "degree must be greater or equal than 0");
+//  if (degree < 0) {
+//    throw IllegalArgumentException("degree must not be less then 0");
+//  }
   if (coefficient == 0) {
     return field_.getZero();
   }
@@ -187,12 +192,14 @@ Ref<GenericGFPoly> GenericGFPoly::multiplyByMonomial(int degree, int coefficient
 }
   
 std::vector<Ref<GenericGFPoly> > GenericGFPoly::divide(Ref<GenericGFPoly> other) {
-  if (!(&field_ == &other->field_)) {
-    throw IllegalArgumentException("GenericGFPolys do not have same GenericGF field");
-  }
-  if (other->isZero()) {
-    throw IllegalArgumentException("divide by 0");
-  }
+    assert((&field_ == &other->field_) && "GenericGFPolys do not have same GenericGF field");
+//  if (!(&field_ == &other->field_)) {
+//    throw IllegalArgumentException("GenericGFPolys do not have same GenericGF field");
+//  }
+    assert((!other->isZero()) && "divide by 0");
+//  if (other->isZero()) {
+//    throw IllegalArgumentException("divide by 0");
+//  }
     
   Ref<GenericGFPoly> quotient = field_.getZero();
   Ref<GenericGFPoly> remainder = Ref<GenericGFPoly>(this);

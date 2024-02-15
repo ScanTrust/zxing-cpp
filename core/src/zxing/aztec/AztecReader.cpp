@@ -38,6 +38,10 @@ AztecReader::AztecReader() : decoder_() {
 }
         
 Ref<Result> AztecReader::decode(Ref<zxing::BinaryBitmap> image) {
+    if (image.empty()) {
+        return Ref<Result>();
+    }
+
     auto blackMatrix = image->getBlackMatrix();
     if (blackMatrix.empty()) {
         return Ref<Result>();

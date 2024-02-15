@@ -65,6 +65,10 @@ bool Decoder::correctErrors(ArrayRef<char> codewordBytes, int numDataCodewords) 
 
 Ref<DecoderResult> Decoder::decode(Ref<BitMatrix> bits) {
   // Construct a parser and read version, error-correction level
+  if (bits.empty()) {
+    return Ref<DecoderResult>();
+  }
+
   BitMatrixParser parser(bits);
   if (!parser.isValid()) {
       return Ref<DecoderResult>();
@@ -83,6 +87,9 @@ Ref<DecoderResult> Decoder::decode(Ref<BitMatrix> bits) {
   std::vector<Ref<DataBlock> > dataBlocks = DataBlock::getDataBlocks(codewords, version);
 
   int dataBlocksCount = dataBlocks.size();
+  if (dataBlocksCount == 0) {
+      return Ref<DecoderResult>();
+  }
 
   // Count total number of data bytes
   int totalBytes = 0;

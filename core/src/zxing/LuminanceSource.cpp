@@ -21,7 +21,8 @@
 #include <sstream>
 #include <zxing/LuminanceSource.h>
 #include <zxing/InvertedLuminanceSource.h>
-#include <zxing/common/IllegalArgumentException.h>
+
+#include <cassert>
 
 using zxing::Ref;
 using zxing::LuminanceSource;
@@ -35,7 +36,7 @@ bool LuminanceSource::isCropSupported() const {
 }
 
 Ref<LuminanceSource> LuminanceSource::crop(int, int, int, int) const {
-  throw IllegalArgumentException("This luminance source does not support cropping.");
+  assert((false) && "This luminance source does not support cropping.");
 }
 
 bool LuminanceSource::isRotateSupported() const {
@@ -43,7 +44,7 @@ bool LuminanceSource::isRotateSupported() const {
 }
 
 Ref<LuminanceSource> LuminanceSource::rotateCounterClockwise() const {
-  throw IllegalArgumentException("This luminance source does not support rotation.");
+  assert((false) && "This luminance source does not support rotation.");
 }
 
 LuminanceSource::operator std::string() const {

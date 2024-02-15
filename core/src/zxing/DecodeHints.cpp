@@ -19,7 +19,8 @@
  */
 
 #include <zxing/DecodeHints.h>
-#include <zxing/common/IllegalArgumentException.h>
+
+#include <cassert>
 
 using zxing::Ref;
 using zxing::ResultPointCallback;
@@ -83,7 +84,7 @@ void DecodeHints::addFormat(BarcodeFormat toadd) {
   case BarcodeFormat::UPC_A: hints |= UPC_A_HINT; break;
   case BarcodeFormat::UPC_E: hints |= UPC_E_HINT; break;
   case BarcodeFormat::UPC_EAN_EXTENSION: hints |= UPC_EAN_EXTENSION_HINT; break;
-  default: throw IllegalArgumentException("Unrecognizd barcode format");
+  default: assert((false) && "Unrecognized barcode format");
   }
 }
 
@@ -107,7 +108,7 @@ bool DecodeHints::containsFormat(BarcodeFormat tocheck) const {
   case BarcodeFormat::UPC_A: checkAgainst |= UPC_A_HINT; break;
   case BarcodeFormat::UPC_E: checkAgainst |= UPC_E_HINT; break;
   case BarcodeFormat::UPC_EAN_EXTENSION: checkAgainst |= UPC_EAN_EXTENSION_HINT; break;
-  default: throw IllegalArgumentException("Unrecognizd barcode format");
+  default: assert((false) && "Unrecognized barcode format");
   }
   return (hints & checkAgainst) != 0;
 }

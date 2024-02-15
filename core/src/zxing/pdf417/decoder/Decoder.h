@@ -46,9 +46,9 @@ private:
   static const int MAX_ERRORS;
   static const int MAX_EC_CODEWORDS;
 
-  void correctErrors(ArrayRef<int> codewords,
-		ArrayRef<int> erasures, int numECCodewords);
-  static void verifyCodewordCount(ArrayRef<int> codewords, int numECCodewords);
+  bool correctErrors(ArrayRef<int> codewords,
+                     ArrayRef<int> erasures, int numECCodewords);
+  static bool verifyCodewordCount(ArrayRef<int> codewords, int numECCodewords);
 
 public:
 

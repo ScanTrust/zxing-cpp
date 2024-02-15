@@ -82,6 +82,10 @@ Ref<DetectorResult> Detector::detect() {
 
 Ref<DetectorResult> Detector::detect(DecodeHints const& hints) {
   (void)hints;
+
+  if(image_.empty()) {
+      return Ref<DetectorResult>();
+  }
   // Fetch the 1 bit matrix once up front.
   Ref<BitMatrix> matrix = image_->getBlackMatrix();
   if (matrix.empty()) {

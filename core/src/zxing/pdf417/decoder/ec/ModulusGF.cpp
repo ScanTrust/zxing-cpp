@@ -20,6 +20,8 @@
 #include <zxing/pdf417/decoder/ec/ModulusGF.h>
 #include <zxing/pdf417/decoder/ec/ModulusPoly.h>
 
+#include <cassert>
+
 using zxing::Ref;
 using zxing::pdf417::decoder::ec::ModulusGF;
 using zxing::pdf417::decoder::ec::ModulusPoly;
@@ -67,9 +69,10 @@ Ref<ModulusPoly> ModulusGF::getOne() {
 
 Ref<ModulusPoly> ModulusGF::buildMonomial(int degree, int coefficient)
 {
-  if (degree < 0) {
-    throw IllegalArgumentException("monomial: degree < 0!");
-  }
+    assert((degree >= 0) && "monomial: degree < 0!");
+//  if (degree < 0) {
+//    throw IllegalArgumentException("monomial: degree < 0!");
+//  }
   if (coefficient == 0) {
     return zero_;
   }
@@ -95,16 +98,18 @@ int ModulusGF::exp(int a) {
 }
 
 int ModulusGF::log(int a) {
-  if (a == 0) {
-    throw IllegalArgumentException("log of zero!");
-  }
+    assert((a > 0) && "log of zero or negative value!");
+//  if (a == 0) {
+//    throw IllegalArgumentException("log of zero!");
+//  }
   return logTable_[a];
 }
 
 int ModulusGF::inverse(int a) {
-  if (a == 0) {
-    throw IllegalArgumentException("inverse of zero!");;
-  }
+    assert((a != 0) && "inverse of zero!");
+//  if (a == 0) {
+//    throw IllegalArgumentException("inverse of zero!");
+//  }
   return expTable_[modulus_ - logTable_[a] - 1];
 }
 

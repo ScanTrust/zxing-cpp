@@ -418,6 +418,9 @@ DecodedBitStreamParser::decode(ArrayRef<char> bytes,
           mode = &Mode::forBits(
                   bits.readBits(4)  // throw IllegalArg
                   ); // mode is encoded by 4 bits // throw ReaderException
+          if(mode == &Mode::INVALID_MODE) {
+              return Ref<DecoderResult>();
+          }
       }
       if (mode != &Mode::TERMINATOR) {
         if ((mode == &Mode::FNC1_FIRST_POSITION) || (mode == &Mode::FNC1_SECOND_POSITION)) {

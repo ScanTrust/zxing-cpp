@@ -63,9 +63,8 @@ Ref<Result> UPCAReader::maybeReturnResult(Ref<Result> result) {
     Ref<Result> res(new Result(resultString, result->getRawBytes(), result->getResultPoints(),
                                BarcodeFormat::UPC_A));
     return res;
-  } else {
-    return Ref<Result>();
   }
+  return Ref<Result>();
 }
 
 zxing::BarcodeFormat UPCAReader::getBarcodeFormat(){

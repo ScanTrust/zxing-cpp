@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-#include "assert.h"
-
 #include <zxing/common/BitMatrix.h>
 #include <string>
+
+#include <cassert>
 
 using std::ostream;
 using std::ostringstream;

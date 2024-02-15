@@ -78,7 +78,8 @@ Ref<DecoderResult> DecodedBitStreamParser::decode(ArrayRef<char> bytes) {
           decodeBase256Segment(bits, result, byteSegments);
           break;
         default:
-          throw FormatException("Unsupported mode indicator");
+            return Ref<DecoderResult>();
+//          throw FormatException("Unsupported mode indicator");
       }
       mode = ASCII_ENCODE;
     }
@@ -98,7 +99,8 @@ int DecodedBitStreamParser::decodeAsciiSegment(Ref<BitSource> bits, ostringstrea
   do {
     int oneByte = bits->readBits(8);
     if (oneByte == 0) {
-      throw FormatException("Not enough bits to decode");
+        return ERROR;
+//      throw FormatException("Not enough bits to decode");
     } else if (oneByte <= 128) {  // ASCII data (ASCII value + 1)
       oneByte = upperShift ? (oneByte + 128) : oneByte;
       // upperShift = false;
@@ -143,7 +145,8 @@ int DecodedBitStreamParser::decodeAsciiSegment(Ref<BitSource> bits, ostringstrea
     } else if (oneByte >= 242) { // Not to be used in ASCII encodation
       // ... but work around encoders that end with 254, latch back to ASCII
       if (oneByte != 254 || bits->available() != 0) {
-        throw FormatException("Not to be used in ASCII encodation");
+          return ERROR;
+//        throw FormatException("Not to be used in ASCII encodation");
       }
     }
   } while (bits->available() > 0);
@@ -207,7 +210,8 @@ void DecodedBitStreamParser::decodeC40Segment(Ref<BitSource> bits, ostringstream
           } else if (cValue == 30) {  // Upper Shift
             upperShift = true;
           } else {
-            throw FormatException("decodeC40Segment: Upper Shift");
+              return;
+//            throw FormatException("decodeC40Segment: Upper Shift");
           }
           shift = 0;
           break;
@@ -221,7 +225,8 @@ void DecodedBitStreamParser::decodeC40Segment(Ref<BitSource> bits, ostringstream
           shift = 0;
           break;
         default:
-          throw FormatException("decodeC40Segment: no case");
+            return;
+//          throw FormatException("decodeC40Segment: no case");
       }
     }
   } while (bits->available() > 0);
@@ -285,7 +290,8 @@ void DecodedBitStreamParser::decodeTextSegment(Ref<BitSource> bits, ostringstrea
           } else if (cValue == 30) {  // Upper Shift
             upperShift = true;
           } else {
-            throw FormatException("decodeTextSegment: Upper Shift");
+              return;
+//            throw FormatException("decodeTextSegment: Upper Shift");
           }
           shift = 0;
           break;
@@ -299,7 +305,8 @@ void DecodedBitStreamParser::decodeTextSegment(Ref<BitSource> bits, ostringstrea
           shift = 0;
           break;
         default:
-          throw FormatException("decodeTextSegment: no case");
+            return;
+//          throw FormatException("decodeTextSegment: no case");
       }
     }
   } while (bits->available() > 0);
@@ -337,7 +344,8 @@ void DecodedBitStreamParser::decodeAnsiX12Segment(Ref<BitSource> bits, ostringst
       } else if (cValue < 40) {  // A - Z
         result << (char) (cValue + 51);
       } else {
-        throw FormatException("decodeAnsiX12Segment: no case");
+          return;
+//        throw FormatException("decodeAnsiX12Segment: no case");
       }
     }
   } while (bits->available() > 0);
@@ -396,14 +404,16 @@ void DecodedBitStreamParser::decodeBase256Segment(Ref<BitSource> bits, ostringst
 
   // We're seeing NegativeArraySizeException errors from users.
   if (count < 0) {
-    throw FormatException("NegativeArraySizeException");
+      return;
+//    throw FormatException("NegativeArraySizeException");
   }
 
   for (int i = 0; i < count; i++) {
     // Have seen this particular error in the wild, such as at
     // http://www.bcgen.com/demo/IDAutomationStreamingDataMatrix.aspx?MODE=3&D=Fred&PFMT=3&PT=F&X=0.3&O=0&LM=0.2
     if (bits->available() < 8) {
-      throw FormatException("byteSegments");
+        return;
+//      throw FormatException("byteSegments");
     }
     char byte = unrandomize255State(bits->readBits(8), codewordPosition++);
     byteSegments.push_back(byte);

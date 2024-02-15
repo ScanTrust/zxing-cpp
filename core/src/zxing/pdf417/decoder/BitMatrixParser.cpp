@@ -25,6 +25,8 @@
 
 #include <zxing/pdf417/decoder/BitMatrixParser.h>
 
+#include <cassert>
+
 using zxing::pdf417::decoder::BitMatrixParser;
 using zxing::ArrayRef;
 
@@ -81,10 +83,14 @@ ArrayRef<int> BitMatrixParser::readCodewords()
     if (rowNumber >= MAX_ROWS) {
       // Something is wrong, since we have exceeded
       // the maximum rows in the specification.
-      throw FormatException("BitMatrixParser::readCodewords(PDF): Too many rows!");
+//      throw FormatException("BitMatrixParser::readCodewords(PDF): Too many rows!");
+        return {};
     }
     // Process Row
     next = processRow(rowNumber, codewords, next);
+    if(next == -1) {
+        return {};
+    }
     rowNumber++;
   }
   erasures_ = trimArray(erasures_, eraseCount_);
@@ -127,14 +133,16 @@ int BitMatrixParser::processRow(int rowNumber, ArrayRef<int> codewords, int next
       if (cw < 0 && i < width - MODULES_IN_SYMBOL) {
         // Skip errors on the Right row indicator column
         if (eraseCount_ >= (int)erasures_->size()) {
-          throw FormatException("BitMatrixParser::processRow(PDF417): eraseCount too big!");
+            return -1;
+//          throw FormatException("BitMatrixParser::processRow(PDF417): eraseCount too big!");
         }
         erasures_[eraseCount_] = next;
         next++;
         eraseCount_++;
       } else {
         if (next >= codewords->size()) {
-          throw FormatException("BitMatrixParser::processRow(PDF417): codewords index out of bound.");
+            return -1;
+//          throw FormatException("BitMatrixParser::processRow(PDF417): codewords index out of bound.");
         }
         codewords[next++] = cw;
       }
@@ -164,7 +172,8 @@ int BitMatrixParser::processRow(int rowNumber, ArrayRef<int> codewords, int next
       }
       // 2012-06-22 hfn: verify whether outer columns are still okay:
       if (!VerifyOuterColumns(rowNumber)) {
-        throw FormatException("BitMatrixParser::processRow(PDF417): outer columns corrupted!");
+          return -1;
+//        throw FormatException("BitMatrixParser::processRow(PDF417): outer columns corrupted!");
       }
     }
     codewords[next] = 0;
@@ -183,9 +192,10 @@ int BitMatrixParser::processRow(int rowNumber, ArrayRef<int> codewords, int next
   */
 ArrayRef<int> BitMatrixParser::trimArray(ArrayRef<int> array, int size)
 {
-  if (size < 0) {
-    throw IllegalArgumentException("BitMatrixParser::trimArray: negative size!");
-  }
+    assert((size >= 0) && "BitMatrixParser::trimArray: negative size!");
+//  if (size < 0) {
+//    throw IllegalArgumentException("BitMatrixParser::trimArray: negative size!");
+//  }
   // 2012-10-12 hfn don't throw "NoErrorException" when size == 0
   ArrayRef<int> a = new Array<int>(size);
   for (int i = 0; i < size; i++) {

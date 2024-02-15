@@ -21,6 +21,8 @@
 
 #include <zxing/qrcode/ErrorCorrectionLevel.h>
 
+#include <cassert>
+
 using std::string;
 
 namespace zxing {
@@ -48,9 +50,10 @@ ErrorCorrectionLevel::operator string const& () const {
 }
 
 ErrorCorrectionLevel& ErrorCorrectionLevel::forBits(int bits) {
-  if (bits < 0 || bits >= N_LEVELS) {
-    throw ReaderException("Ellegal error correction level bits");
-  }
+  assert(!(bits < 0 || bits >= N_LEVELS) && "Illegal error correction level bits");
+//  if (bits < 0 || bits >= N_LEVELS) {
+//    throw ReaderException("Illegal error correction level bits");
+//  }
   return *FOR_BITS[bits];
 }
 

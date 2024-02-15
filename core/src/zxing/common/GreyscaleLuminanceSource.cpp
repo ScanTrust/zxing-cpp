@@ -20,7 +20,8 @@
 
 #include <zxing/common/GreyscaleLuminanceSource.h>
 #include <zxing/common/GreyscaleRotatedLuminanceSource.h>
-#include <zxing/common/IllegalArgumentException.h>
+
+#include <cassert>
 
 using zxing::Ref;
 using zxing::ArrayRef;
@@ -37,15 +38,17 @@ GreyscaleLuminanceSource(ArrayRef<char> greyData,
       dataWidth_(dataWidth), dataHeight_(dataHeight),
       left_(left), top_(top) {
 
-  if (left + width > dataWidth || top + height > dataHeight || top < 0 || left < 0) {
-    throw IllegalArgumentException("Crop rectangle does not fit within image data.");
-  }
+  assert((!(left + width > dataWidth || top + height > dataHeight || top < 0 || left < 0)) && "Crop rectangle does not fit within image data.");
+//  if (left + width > dataWidth || top + height > dataHeight || top < 0 || left < 0) {
+//    throw IllegalArgumentException("Crop rectangle does not fit within image data.");
+//  }
 }
 
 ArrayRef<char> GreyscaleLuminanceSource::getRow(int y, ArrayRef<char> row) const {
-  if (y < 0 || y >= this->getHeight()) {
-    throw IllegalArgumentException("Requested row is outside the image.");
-  }
+    assert((!(y < 0 || y >= this->getHeight())) && "Requested row is outside the image.");
+//  if (y < 0 || y >= this->getHeight()) {
+//    throw IllegalArgumentException("Requested row is outside the image.");
+//  }
   int width = getWidth();
   if (!row || row->size() < width) {
     ArrayRef<char> temp (width);

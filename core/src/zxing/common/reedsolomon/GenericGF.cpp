@@ -22,7 +22,8 @@
 #include <iostream>
 #include <zxing/common/reedsolomon/GenericGF.h>
 #include <zxing/common/reedsolomon/GenericGFPoly.h>
-#include <zxing/common/IllegalArgumentException.h>
+
+#include <cassert>
 
 using zxing::GenericGF;
 using zxing::GenericGFPoly;
@@ -93,10 +94,10 @@ Ref<GenericGFPoly> GenericGF::getOne() {
   
 Ref<GenericGFPoly> GenericGF::buildMonomial(int degree, int coefficient) {
   checkInit();
-    
-  if (degree < 0) {
-    throw IllegalArgumentException("Degree must be non-negative");
-  }
+  assert((degree >= 0) && "Degree must be positive or 0");
+//  if (degree < 0) {
+//    throw IllegalArgumentException("Degree must be non-negative");
+//  }
   if (coefficient == 0) {
     return zero;
   }
@@ -117,17 +118,19 @@ int GenericGF::exp(int a) {
   
 int GenericGF::log(int a) {
   checkInit();
-  if (a == 0) {
-    throw IllegalArgumentException("cannot give log(0)");
-  }
+  assert((a > 0) && "`a` must be > 0");
+//  if (a == 0) {
+//    throw IllegalArgumentException("cannot give log(0)");
+//  }
   return logTable[a];
 }
   
 int GenericGF::inverse(int a) {
   checkInit();
-  if (a == 0) {
-    throw IllegalArgumentException("Cannot calculate the inverse of 0");
-  }
+  assert((a != 0) && "Cannot calculate the inverse of 0");
+//  if (a == 0) {
+//    throw IllegalArgumentException("Cannot calculate the inverse of 0");
+//  }
   return expTable[size - logTable[a] - 1];
 }
   

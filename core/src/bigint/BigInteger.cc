@@ -13,8 +13,9 @@ void BigInteger::operator =(const BigInteger &x) {
 BigInteger::BigInteger(const Blk *b, Index blen, Sign s) : mag(b, blen) {
 	switch (s) {
 	case zero:
-		if (!mag.isZero())
-			throw "BigInteger::BigInteger(const Blk *, Index, Sign): Cannot use a sign of zero with a nonzero magnitude";
+        assert(mag.isZero() && "BigInteger::BigInteger(const Blk *, Index, Sign): Cannot use a sign of zero with a nonzero magnitude");
+//		if (!mag.isZero())
+//			throw "BigInteger::BigInteger(const Blk *, Index, Sign): Cannot use a sign of zero with a nonzero magnitude";
 		sign = zero;
 		break;
 	case positive:
@@ -22,18 +23,19 @@ BigInteger::BigInteger(const Blk *b, Index blen, Sign s) : mag(b, blen) {
 		// If the magnitude is zero, force the sign to zero.
 		sign = mag.isZero() ? zero : s;
 		break;
-	default:
-		/* g++ seems to be optimizing out this case on the assumption
-		 * that the sign is a valid member of the enumeration.  Oh well. */
-		throw "BigInteger::BigInteger(const Blk *, Index, Sign): Invalid sign";
+//	default:
+//		/* g++ seems to be optimizing out this case on the assumption
+//		 * that the sign is a valid member of the enumeration.  Oh well. */
+//		throw "BigInteger::BigInteger(const Blk *, Index, Sign): Invalid sign";
 	}
 }
 
 BigInteger::BigInteger(const BigUnsigned &x, Sign s) : mag(x) {
 	switch (s) {
 	case zero:
-		if (!mag.isZero())
-			throw "BigInteger::BigInteger(const BigUnsigned &, Sign): Cannot use a sign of zero with a nonzero magnitude";
+        assert(mag.isZero() && "BigInteger::BigInteger(const Blk *, Index, Sign): Cannot use a sign of zero with a nonzero magnitude");
+//		if (!mag.isZero())
+//			throw "BigInteger::BigInteger(const BigUnsigned &, Sign): Cannot use a sign of zero with a nonzero magnitude";
 		sign = zero;
 		break;
 	case positive:
@@ -41,10 +43,10 @@ BigInteger::BigInteger(const BigUnsigned &x, Sign s) : mag(x) {
 		// If the magnitude is zero, force the sign to zero.
 		sign = mag.isZero() ? zero : s;
 		break;
-	default:
-		/* g++ seems to be optimizing out this case on the assumption
-		 * that the sign is a valid member of the enumeration.  Oh well. */
-		throw "BigInteger::BigInteger(const BigUnsigned &, Sign): Invalid sign";
+//	default:
+//		/* g++ seems to be optimizing out this case on the assumption
+//		 * that the sign is a valid member of the enumeration.  Oh well. */
+//		throw "BigInteger::BigInteger(const BigUnsigned &, Sign): Invalid sign";
 	}
 }
 
@@ -91,11 +93,12 @@ inline X convertBigUnsignedToPrimitiveAccess(const BigUnsigned &a) {
 
 template <class X>
 X BigInteger::convertToUnsignedPrimitive() const {
-	if (sign == negative)
-		throw "BigInteger::to<Primitive>: "
-			"Cannot convert a negative integer to an unsigned type";
-	else
-		return convertBigUnsignedToPrimitiveAccess<X>(mag);
+    assert((sign != negative) && "BigInteger::to<Primitive>: Cannot convert a negative integer to an unsigned type");
+//	if (sign == negative)
+//		throw "BigInteger::to<Primitive>: "
+//			"Cannot convert a negative integer to an unsigned type";
+//	else
+    return convertBigUnsignedToPrimitiveAccess<X>(mag);
 }
 
 /* Similar to BigUnsigned::convertToPrimitive, but split into two cases for

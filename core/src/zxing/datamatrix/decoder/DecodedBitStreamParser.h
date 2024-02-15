@@ -34,6 +34,7 @@ namespace datamatrix {
 
 class DecodedBitStreamParser {
 private:
+  static const int ERROR = -1;
   static const int PAD_ENCODE = 0;  // Not really an encoding
   static const int ASCII_ENCODE = 1;
   static const int C40_ENCODE = 2;

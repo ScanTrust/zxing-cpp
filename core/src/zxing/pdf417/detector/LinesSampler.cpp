@@ -123,11 +123,20 @@ Ref<BitMatrix> LinesSampler::sample() {
   // XXX
   vector<vector<int> > codewords(linesMatrix_->getHeight());
   vector<vector<int> > clusterNumbers(linesMatrix_->getHeight());
-  linesMatrixToCodewords(clusterNumbers, symbolsPerLine, symbolWidths, linesMatrix_, codewords);
+
+  bool linesMatrixToCodewordsSucceeded;
+  linesMatrixToCodewords(clusterNumbers,
+                         symbolsPerLine,
+                         symbolWidths,
+                         linesMatrix_,
+                         codewords,
+                         linesMatrixToCodewordsSucceeded);
+  if(!linesMatrixToCodewordsSucceeded) {
+      return Ref<BitMatrix>();
+  }
 
   // XXX
-  vector<vector<map<int, int> > > votes =
-      distributeVotes(symbolsPerLine, codewords, clusterNumbers);
+  vector<vector<map<int, int> > > votes = distributeVotes(symbolsPerLine, codewords, clusterNumbers);
 
   // XXX
   vector<vector<int> > detectedCodeWords(votes.size());
@@ -273,17 +282,20 @@ void LinesSampler::computeSymbolWidths(vector<float> &symbolWidths, const int sy
 #endif
 }
 
-void LinesSampler::linesMatrixToCodewords(vector<vector<int> >& clusterNumbers,
-                                          const int symbolsPerLine,
-                                          const vector<float>& symbolWidths,
-                                          Ref<BitMatrix> linesMatrix,
-                                          vector<vector<int> >& codewords)
+void LinesSampler::linesMatrixToCodewords(vector<vector<int> > &clusterNumbers, const int symbolsPerLine,
+                                          const vector<float> &symbolWidths, Ref<BitMatrix> linesMatrix,
+                                          vector<vector<int> > &codewords, bool &success)
 {
+  success = true;
+  if (symbolsPerLine > (int)symbolWidths.size()) {
+      success = false;
+      return;
+  }
   for (int y = 0; y < linesMatrix->getHeight(); y++) {
     // Not sure if this is the right way to handle this but avoids an error:
-    if (symbolsPerLine > (int)symbolWidths.size()) {
-      throw NotFoundException("Inconsistent number of symbols in this line.");
-    }
+//    if (symbolsPerLine > (int)symbolWidths.size()) {
+//      throw NotFoundException("Inconsistent number of symbols in this line.");
+//    }
 
     // TODO: use symbolWidths.size() instead of symbolsPerLine to at least decode some codewords
 

@@ -42,6 +42,7 @@ Mode Mode::KANJI(8, 10, 12, 0x08, "KANJI");
 Mode Mode::FNC1_FIRST_POSITION(0, 0, 0, 0x05, "FNC1_FIRST_POSITION");
 Mode Mode::FNC1_SECOND_POSITION(0, 0, 0, 0x09, "FNC1_SECOND_POSITION");
 Mode Mode::HANZI(8, 10, 12, 0x0D, "HANZI");
+Mode Mode::INVALID_MODE(0, 0, 0, 0, "INVALID_MODE");
 
 Mode::Mode(int cbv0_9, int cbv10_26, int cbv27, int /* bits */, char const* name) :
   characterCountBitsForVersions0To9_(cbv0_9), characterCountBitsForVersions10To26_(cbv10_26),
@@ -72,9 +73,10 @@ Mode& Mode::forBits(int bits) {
     // 0xD is defined in GBT 18284-2000, may not be supported in foreign country
     return HANZI;
   default:
-    ostringstream s;
-    s << "Illegal mode bits: " << bits;
-    throw ReaderException(s.str().c_str());
+      return INVALID_MODE;
+//    ostringstream s;
+//    s << "Illegal mode bits: " << bits;
+//    throw ReaderException(s.str().c_str());
   }
 }
 

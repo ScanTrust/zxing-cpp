@@ -46,8 +46,10 @@ ErrorCorrection::ErrorCorrection()
 
 void ErrorCorrection::decode(ArrayRef<int> received,
                              int numECCodewords,
-                             ArrayRef<int> erasures)
+                             ArrayRef<int> erasures,
+                             bool& success)
 {
+    success = true;
   Ref<ModulusPoly> poly (new ModulusPoly(field_, received));
   ArrayRef<int> S( new Array<int>(numECCodewords));
   bool error = false;
@@ -75,20 +77,38 @@ void ErrorCorrection::decode(ArrayRef<int> received,
     Ref<ModulusPoly> syndrome (new ModulusPoly(field_, S));
     //syndrome = syndrome.multiply(knownErrors);
 
-    vector<Ref<ModulusPoly> > sigmaOmega (
-        runEuclideanAlgorithm(field_.buildMonomial(numECCodewords, 1), syndrome, numECCodewords));
+    vector<Ref<ModulusPoly> > sigmaOmega (runEuclideanAlgorithm(field_.buildMonomial(numECCodewords, 1),
+                                                                syndrome,
+                                                                numECCodewords));
+
+    if(sigmaOmega.size() < 2) {
+        success = false;
+        return;
+    }
+
     Ref<ModulusPoly> sigma = sigmaOmega[0];
     Ref<ModulusPoly> omega = sigmaOmega[1];
 
     //sigma = sigma.multiply(knownErrors);
 
     ArrayRef<int> errorLocations = findErrorLocations(sigma);
+    if (!errorLocations) {
+        success = false;
+        return;
+    }
+
     ArrayRef<int> errorMagnitudes = findErrorMagnitudes(omega, sigma, errorLocations);
+    if (!errorMagnitudes) {
+        success = false;
+        return;
+    }
 
     for (int i = 0; i < errorLocations->size(); i++) {
       int position = received->size() - 1 - field_.log(errorLocations[i]);
       if (position < 0) {
-        throw ReedSolomonException("Bad error location!");
+//          throw ReedSolomonException("Bad error location!");
+          success = false;
+          return;
       }
       received[position] = field_.subtract(received[position], errorMagnitudes[i]);
 #if (defined (DEBUG)  && defined _WIN32)
@@ -127,7 +147,8 @@ vector<Ref<ModulusPoly> >  ErrorCorrection::runEuclideanAlgorithm(Ref<ModulusPol
     // Divide rLastLast by rLast, with quotient in q and remainder in r
     if (rLast->isZero()) {
       // Oops, Euclidean algorithm already terminated?
-      throw ReedSolomonException("Euclidean algorithm already terminated?");
+//      throw ReedSolomonException("Euclidean algorithm already terminated?");
+      return {};
     }
     r = rLastLast;
     Ref<ModulusPoly> q (field_.getZero());
@@ -145,7 +166,8 @@ vector<Ref<ModulusPoly> >  ErrorCorrection::runEuclideanAlgorithm(Ref<ModulusPol
 
   int sigmaTildeAtZero = t->getCoefficient(0);
   if (sigmaTildeAtZero == 0) {
-    throw ReedSolomonException("sigmaTilde = 0!");
+      return {};
+//    throw ReedSolomonException("sigmaTilde = 0!");
   }
 
   int inverse = field_.inverse(sigmaTildeAtZero);
@@ -174,7 +196,8 @@ ArrayRef<int> ErrorCorrection::findErrorLocations(Ref<ModulusPoly> errorLocator)
 	  sprintf(sz,"Error number inconsistency, %d/%d!",e,numErrors);
     throw ReedSolomonException(sz);
 #else
-	  throw ReedSolomonException("Error number inconsistency!");
+//	  throw ReedSolomonException("Error number inconsistency!");
+    return {};
 #endif
   }
 #if (defined (DEBUG) && defined _WIN32)

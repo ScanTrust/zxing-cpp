@@ -54,8 +54,8 @@ int UPCAReader::decodeMiddle(Ref<BitArray> row,
 }
 
 Ref<Result> UPCAReader::maybeReturnResult(Ref<Result> result) {
-    if (result.empty()) {
-        return result;
+    if (!result || result.empty()) {
+        return Ref<Result>();
     }
   const std::string& text = (result->getText())->getText();
   if (text[0] == '0') {

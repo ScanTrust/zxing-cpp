@@ -134,12 +134,15 @@ Ref<Result> UPCEANReader::decodeRow(int rowNumber,
 
   int endStart = decodeMiddle(row, startGuardRange, result);
 
-    // check decodeMiddle success
-    if (endStart < 0) {
-        return Ref<Result>();
-    }
+  // check decodeMiddle success
+  if (endStart < 0) {
+    return Ref<Result>();
+  }
 
   Range endRange = decodeEnd(row, endStart);
+  if (!endRange.isValid()) {
+    return Ref<Result>();
+  }
 
   // Make sure there is a quiet zone at least as big as the end pattern after the barcode.
   // The spec might want more whitespace, but in practice this is the maximum we can count on.
@@ -147,7 +150,7 @@ Ref<Result> UPCEANReader::decodeRow(int rowNumber,
   int end = endRange[1];
   int quietEnd = end + (end - endRange[0]);
   if (quietEnd >= row->getSize() || !row->isRange(end, quietEnd, false)) {
-      return Ref<Result>();
+    return Ref<Result>();
   }
 
   // UPC/EAN should never be less than 8 chars anyway
@@ -157,7 +160,7 @@ Ref<Result> UPCEANReader::decodeRow(int rowNumber,
 
   Ref<String> resultString (new String(result));
   if (!checkChecksum(resultString)) {
-      return Ref<Result>();
+    return Ref<Result>();
   }
   
   float left = (float) (startGuardRange[1] + startGuardRange[0]) / 2.0f;
@@ -180,7 +183,10 @@ UPCEANReader::Range UPCEANReader::findStartGuardPattern(Ref<BitArray> row) {
     for(int i=0; i < (int)START_END_PATTERN.size(); ++i) {
       counters[i] = 0;
     }
-      Range startRange = findGuardPattern(row, nextStart, false, START_END_PATTERN, counters);
+    Range startRange = findGuardPattern(row, nextStart, false, START_END_PATTERN, counters);
+    if (!startRange.isValid()) {
+      return {};
+    }
     // std::cerr << "sr " << startRange[0] << " " << startRange[1] << std::endl;
     int start = startRange[0];
     nextStart = startRange[1];

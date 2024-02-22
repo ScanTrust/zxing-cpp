@@ -58,7 +58,7 @@ Ref<Result> PDF417Reader::decode(Ref<BinaryBitmap> image, DecodeHints hints) {
     }
   }
   decoderResult = decoder.decode(detectorResult->getBits(),hints);
-  if (detectorResult.empty()) {
+  if (decoderResult.empty()) {
       return Ref<Result>();
   }
   Ref<Result> r(new Result(decoderResult->getText(), decoderResult->getRawBytes(), points,

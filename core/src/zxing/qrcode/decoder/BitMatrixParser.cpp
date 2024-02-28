@@ -123,6 +123,7 @@ Version *BitMatrixParser::readVersion() {
   if (parsedVersion_ != nullptr && parsedVersion_->getDimensionForVersion() == dimension) {
     return parsedVersion_;
   }
+  parsedVersion_ = nullptr;
   return nullptr;
 //  throw ReaderException("Could not decode version");
 }

@@ -74,6 +74,10 @@ Ref<DecoderResult> Decoder::decode(Ref<BitMatrix> bits) {
   }
 
   Version *version = parser.readVersion();
+  if(!version) {
+      return Ref<DecoderResult>();
+  }
+
   auto formatInformation(parser.readFormatInformation());
   if(formatInformation.empty()) {
       return Ref<DecoderResult>();

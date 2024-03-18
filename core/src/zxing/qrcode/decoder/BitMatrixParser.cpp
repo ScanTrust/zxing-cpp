@@ -82,7 +82,7 @@ Ref<FormatInformation> BitMatrixParser::readFormatInformation() {
 }
 
 Version *BitMatrixParser::readVersion() {
-  if (!isValid_) {
+  if (!isValid_ || !bitMatrix_) {
     return nullptr;
   }
   if (parsedVersion_ != nullptr) {
@@ -132,6 +132,10 @@ ArrayRef<char> BitMatrixParser::readCodewords() {
   if (!isValid_) {
     return {};
   }
+  if (!bitMatrix_) {
+      return {};
+  }
+
   Ref<FormatInformation> formatInfo = readFormatInformation();
   if (!formatInfo) {
       return {};
@@ -145,10 +149,13 @@ ArrayRef<char> BitMatrixParser::readCodewords() {
 
   // Get the data mask for the format used in this QR Code. This will exclude
   // some bits from reading as we wind through the bit matrix.
-  DataMask &dataMask = DataMask::forReference((int)formatInfo->getDataMask());
+  auto dataMask = DataMask::forReference((int)formatInfo->getDataMask());
+  if(!dataMask) {
+      return {};
+  }
   //	cout << (int)formatInfo->getDataMask() << endl;
   int dimension = bitMatrix_->getHeight();
-  dataMask.unmaskBitMatrix(*bitMatrix_, dimension);
+  dataMask->unmaskBitMatrix(*bitMatrix_, dimension);
 
 
   //		cerr << *bitMatrix_ << endl;

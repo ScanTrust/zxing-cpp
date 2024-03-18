@@ -41,7 +41,7 @@ public:
   virtual ~DataMask();
   void unmaskBitMatrix(BitMatrix& matrix, size_t dimension);
   virtual bool isMasked(size_t x, size_t y) = 0;
-  static DataMask& forReference(int reference);
+  static Ref<DataMask> forReference(int reference);
 };
 
 }

@@ -36,11 +36,12 @@ DataMask::~DataMask() {
 vector<Ref<DataMask> > DataMask::DATA_MASKS;
 static int N_DATA_MASKS = DataMask::buildDataMasks();
 
-DataMask &DataMask::forReference(int reference) {
-//  if (reference < 0 || reference > 7) {
+Ref<DataMask> DataMask::forReference(int reference) {
+  if (reference < 0 || reference > 7) {
 //    throw IllegalArgumentException("reference must be between 0 and 7");
-//  }
-  return *DATA_MASKS[reference];
+    return Ref<DataMask>();
+  }
+  return DATA_MASKS[reference];
 }
 
 void DataMask::unmaskBitMatrix(BitMatrix& bits, size_t dimension) {

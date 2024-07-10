@@ -5,15 +5,13 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
 endif()
 
-project(zxing)
+project(zxing LANGUAGES CXX)
 # Needed to set the namespace for both the export targets and the
 # alias libraries
 set(cmake_package_name zxing CACHE INTERNAL "")
 
 option(BUILD_TESTING "Enable generation of test targets" OFF)
 option(BUILD_RUNNABLE "Enable generation of runnable targets" OFF)
-
-set(CMAKE_LIBRARY_PATH /opt/local/lib ${CMAKE_LIBRARY_PATH})
 
 set(CMAKE_CXX_STANDARD 14)
 #set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fno-exceptions")
@@ -69,7 +67,6 @@ endif()
 set(LIBZXING_HEADERS ${LIBZXING_FILES})
 list(FILTER LIBZXING_HEADERS INCLUDE REGEX "\\.(h|hh|hpp)$")
 
-include_directories(core/src)
 add_library(libzxing STATIC ${LIBZXING_FILES})
 
 # Alias to make its source tree conform with its install tree
@@ -81,7 +78,7 @@ set_property(TARGET PROPERTY PUBLIC_HEADERS LIBZXING_HEADERS)
 message(STATUS "LIBZXING_HEADERS ${LIBZXING_HEADERS}")
 
 target_include_directories(libzxing
-        INTERFACE
+        PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/core/src>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/core/src>"
         )

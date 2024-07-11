@@ -83,15 +83,6 @@ target_include_directories(libzxing
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/core/src>"
         )
 
-if (EMSCRIPTEN)
-    message(STATUS "Setting EMSCRIPTEN flags")
-    set_target_properties(libzxing PROPERTIES COMPILE_FLAGS "-pthread")
-    set_target_properties(libzxing PROPERTIES LINK_FLAGS "-pthread")
-
-    # Disable iconv dep because it causes link issue when pthread is on
-    set(WITHOUT_ICONV TRUE)
-endif(EMSCRIPTEN)
-
 set(targets libzxing)
 
 
